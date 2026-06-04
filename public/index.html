@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ежедневник</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Библиотека календаря -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
@@ -46,7 +45,6 @@
         .events-container { padding: 0 20px 100px; }
         .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; }
 
-        /* Группировка по дням */
         .day-group { margin-bottom: 24px; }
         .day-header {
             font-size: 15px; font-weight: 600; color: var(--hint-color);
@@ -62,12 +60,13 @@
         }
         .event-title { font-size: 17px; font-weight: 600; display: block; margin-bottom: 4px; }
         .event-time { font-size: 14px; color: var(--accent-color); font-weight: 500; }
-        .event-meta { font-size: 12px; color: var(--hint-color); margin-top: 4px; display: block; }
+        .event-comment { font-size: 14px; color: var(--hint-color); margin-top: 6px; display: block; line-height: 1.3;}
+        .event-meta { font-size: 12px; color: var(--hint-color); margin-top: 6px; display: block; opacity: 0.7;}
         
         .delete-btn {
             background: rgba(255, 59, 48, 0.1); color: var(--danger-color);
             border: none; width: 32px; height: 32px; border-radius: 10px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px;
         }
 
         /* Модалка */
@@ -89,12 +88,26 @@
         .modal-header h2 { margin: 0; font-size: 20px; }
         .close-btn { background: none; border: none; color: var(--accent-color); font-size: 16px; font-weight: 500; padding: 0;}
 
+        /* Инпуты внутри карточек */
         .input-group { background: var(--card-bg); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
-        .input-group input {
+        .input-group input, .input-group textarea {
             width: 100%; border: none; background: transparent;
             color: var(--text-color); font-size: 17px; padding: 12px 0; outline: none; font-family: inherit;
         }
+        .input-group textarea { resize: none; min-height: 60px; }
         .divider { height: 1px; background: var(--bg-color); margin: 0 -16px; }
+
+        /* Тумблер (Switch) в стиле iOS */
+        .row-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 17px;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e9e9ea; transition: .3s; border-radius: 30px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .time-wrapper { transition: 0.3s; overflow: hidden; }
+        .time-wrapper.hidden { display: none; }
 
         .chips-title { font-size: 14px; font-weight: 500; color: var(--hint-color); margin-bottom: 6px;}
         .chips-subtitle { font-size: 12px; color: var(--hint-color); margin-bottom: 12px; opacity: 0.7;}
@@ -111,7 +124,6 @@
             border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px;
         }
         
-        /* Стилизация календаря под темную тему ТГ */
         .flatpickr-calendar { background: var(--card-bg) !important; border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;}
         .flatpickr-day { color: var(--text-color) !important; }
         .flatpickr-day.selected { background: var(--accent-color) !important; border-color: var(--accent-color) !important; }
@@ -125,26 +137,37 @@
         <button class="add-btn" onclick="openModal()">+</button>
     </div>
 
-    <div class="events-container" id="events-list">
-        <!-- Карточки сгруппированные по дням -->
-    </div>
+    <div class="events-container" id="events-list"></div>
 
-    <!-- Модалка -->
     <div class="overlay" id="overlay" onclick="closeModal()"></div>
     <div class="modal" id="modal">
         <div class="modal-header">
-            <h2>Новое дело / Смена</h2>
+            <h2>Новое дело</h2>
             <button class="close-btn" onclick="closeModal()">Отмена</button>
         </div>
 
         <div class="input-group">
             <input type="text" id="title" placeholder="Название (например, Смена 2/2)" autocomplete="off">
             <div class="divider"></div>
-            <!-- Календарь для множественного выбора -->
+            <textarea id="comment" placeholder="Комментарий (необязательно)"></textarea>
+        </div>
+
+        <div class="input-group">
             <input type="text" id="dates-picker" placeholder="Выбери даты (можно несколько)">
             <div class="divider"></div>
-            <!-- Время -->
-            <input type="time" id="time-picker" value="09:00">
+            
+            <div class="row-item">
+                <span>Весь день</span>
+                <label class="switch">
+                    <input type="checkbox" id="all-day-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div id="time-wrapper" class="time-wrapper">
+                <div class="divider"></div>
+                <input type="time" id="time-picker" value="09:00">
+            </div>
         </div>
 
         <div class="chips-title">Напомнить за:</div>
@@ -172,13 +195,23 @@
         let selectedPrefs = [];
         let datePickerInstance;
 
-        // Инициализация календаря Flatpickr (Мульти-выбор дат)
+        // Логика тумблера "Весь день"
+        document.getElementById('all-day-toggle').addEventListener('change', function(e) {
+            tg.HapticFeedback.selectionChanged();
+            const timeWrapper = document.getElementById('time-wrapper');
+            if (e.target.checked) {
+                timeWrapper.classList.add('hidden');
+            } else {
+                timeWrapper.classList.remove('hidden');
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             datePickerInstance = flatpickr("#dates-picker", {
-                mode: "multiple",      // Позволяет выбрать сколько угодно дат
+                mode: "multiple",
                 dateFormat: "Y-m-d",
-                locale: "ru",          // Русский язык
-                disableMobile: "true"  // Чтобы на iOS открывался красивый календарь, а не системный барабан
+                locale: "ru",
+                disableMobile: "true"
             });
         });
 
@@ -205,14 +238,21 @@
             document.getElementById('overlay').classList.remove('active');
             document.getElementById('modal').classList.remove('active');
             
-            // Сброс формы
             document.getElementById('title').value = '';
+            document.getElementById('comment').value = '';
+            document.getElementById('all-day-toggle').checked = false;
+            document.getElementById('time-wrapper').classList.remove('hidden');
             datePickerInstance.clear();
             selectedPrefs = [];
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         }
 
-        // Помощники для красивых дат
+        // Защита от HTML инъекций в комментарии
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
         const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
 
@@ -237,38 +277,33 @@
                     return;
                 }
 
-                // Группируем события по датам
                 const groupedEvents = {};
                 events.forEach(ev => {
                     const dateObj = new Date(ev.event_date);
-                    // Убираем время, чтобы группировать строго по дням
                     const dateKey = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).toISOString();
-                    
                     if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
                     groupedEvents[dateKey].push(ev);
                 });
 
                 list.innerHTML = '';
-                
-                // Отрисовываем группы
                 Object.keys(groupedEvents).sort().forEach(dateKey => {
                     const groupDate = new Date(dateKey);
-                    const dayHeader = getRelativeDayName(groupDate);
-                    
-                    let groupHTML = `<div class="day-group">
-                        <div class="day-header">${dayHeader}</div>`;
+                    let groupHTML = `<div class="day-group"><div class="day-header">${getRelativeDayName(groupDate)}</div>`;
                         
                     groupedEvents[dateKey].forEach(ev => {
-                        const timeString = new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                        // Логика времени (весь день или точное время)
+                        const timeString = ev.is_all_day ? 'Весь день' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                        const commentHtml = ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : '';
                         const prefsText = (ev.notify_prefs && ev.notify_prefs.length > 0) 
                             ? `🔔 Напомнит за: ` + ev.notify_prefs.map(p => p >= 60 ? (p/60 + 'ч') : (p + 'м')).join(', ')
                             : '🔕 Без напоминаний';
 
                         groupHTML += `
                             <div class="event-card">
-                                <div>
+                                <div style="flex-grow: 1;">
                                     <span class="event-title">${ev.title}</span>
                                     <span class="event-time">${timeString}</span>
+                                    ${commentHtml}
                                     <span class="event-meta">${prefsText}</span>
                                 </div>
                                 <button class="delete-btn" onclick="deleteEvent(${ev.id})">
@@ -277,29 +312,29 @@
                             </div>
                         `;
                     });
-                    
                     groupHTML += `</div>`;
                     list.innerHTML += groupHTML;
                 });
-
             } catch (e) { console.error(e); }
         }
 
         async function saveEvent() {
             const title = document.getElementById('title').value;
-            const selectedDates = datePickerInstance.selectedDates; // массив дат
-            const timeVal = document.getElementById('time-picker').value; // "09:00"
+            const comment = document.getElementById('comment').value;
+            const selectedDates = datePickerInstance.selectedDates;
+            const isAllDay = document.getElementById('all-day-toggle').checked;
+            const timeVal = document.getElementById('time-picker').value;
 
-            if (!title || selectedDates.length === 0 || !timeVal) {
+            if (!title || selectedDates.length === 0 || (!isAllDay && !timeVal)) {
                 tg.HapticFeedback.notificationOccurred('error');
-                return tg.showAlert('Укажи название, выбери хотя бы одну дату и время!');
+                return tg.showAlert('Укажи название и выбери даты!');
             }
 
             const btn = document.querySelector('.save-btn');
             btn.textContent = 'Сохранение...';
 
-            // Собираем точные Date объекты (Дата + выбранное время)
-            const [hours, minutes] = timeVal.split(':');
+            const [hours, minutes] = isAllDay ? [0, 0] : timeVal.split(':');
+            
             const finalDates = selectedDates.map(d => {
                 const newDate = new Date(d);
                 newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -309,8 +344,7 @@
             await fetch('/api/events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Отправляем массив дат (dates), а не одну date
-                body: JSON.stringify({ userId, title, dates: finalDates, notifyPrefs: selectedPrefs })
+                body: JSON.stringify({ userId, title, dates: finalDates, notifyPrefs: selectedPrefs, comment, isAllDay })
             });
 
             tg.HapticFeedback.notificationOccurred('success');
