@@ -346,8 +346,37 @@
             clearTimeout(pressTimer);
         };
 
+       // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ И ВЫДЕЛЕНИЯ ---
+        window.handleTouchStart = function(e, id) {
+            if (isSelectMode) return; // В режиме выделения просто работает клик
+            if (e.touches) startY = e.touches[0].clientY;
+            
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                tg.HapticFeedback.impactOccurred('heavy');
+                toggleSelectMode(true);
+                toggleSelection(id);
+            }, 500); // 500 мс для срабатывания долгого нажатия
+        };
+
+        window.handleTouchMove = function(e) {
+            if (e.touches) {
+                let currentY = e.touches[0].clientY;
+                if (Math.abs(currentY - startY) > 10) clearTimeout(pressTimer);
+            }
+        };
+
+        window.handleTouchEnd = function(e) {
+            clearTimeout(pressTimer);
+        };
+
         window.handleCardClick = function(e, id) {
-            if (isLongPress) return; // Игнорируем обычный клик сразу после долгого
+            // Игнорируем клик сразу после долгого удержания и сразу сбрасываем флаг
+            if (isLongPress) {
+                isLongPress = false; 
+                return; 
+            }
             
             if (isSelectMode) {
                 toggleSelection(id);
@@ -365,6 +394,7 @@
                 document.body.classList.remove('select-mode');
                 document.getElementById('bulk-action-bar').classList.remove('active');
                 selectedIds.clear();
+                isLongPress = false; // Сбрасываем флаг на всякий случай
                 renderEvents(); // Сбрасываем UI выделения
             }
         }
