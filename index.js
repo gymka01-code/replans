@@ -51,7 +51,10 @@ const escapeHtmlBot = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;'
 bot.on('inline_query', async (ctx) => {
     try {
         const userId = ctx.from.id;
-        const searchQuery = ctx.inlineQuery.query.toLowerCase().trim(); // Текст, который юзер пишет после @имени_бота
+        const searchQuery = ctx.inlineQuery.query.toLowerCase().trim();
+        
+        // ВАЖНО: Укажите ваш часовой пояс! Например 'Europe/Moscow', 'Asia/Almaty', 'Europe/Kyiv'
+        const USER_TZ = process.env.TZ || 'Europe/Moscow'; 
         
         // Получаем все дела пользователя
         const { rows: events } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
@@ -63,20 +66,20 @@ bot.on('inline_query', async (ctx) => {
             }], { cache_time: 0, is_personal: true });
         }
 
-        // Вычисляем сегодняшнюю и завтрашнюю даты
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setHours(tomorrow.getHours() + 24);
 
-        const getIsoDate = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        const todayStr = getIsoDate(today);
-        const tomorrowStr = getIsoDate(tomorrow);
+        // Используем 'sv-SE', так как этот формат всегда возвращает YYYY-MM-DD
+        const getTzDateStr = (date) => date.toLocaleDateString('sv-SE', { timeZone: USER_TZ });
+        
+        const todayStr = getTzDateStr(now);
+        const tomorrowStr = getTzDateStr(tomorrow);
 
-        // Фильтруем дела по дате
-        let todayEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === todayStr);
-        let tomorrowEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === tomorrowStr);
+        // Фильтруем дела с учетом правильного часового пояса
+        let todayEvents = events.filter(e => getTzDateStr(new Date(e.event_date)) === todayStr);
+        let tomorrowEvents = events.filter(e => getTzDateStr(new Date(e.event_date)) === tomorrowStr);
 
-        // Если юзер что-то написал, фильтруем по названию
         if (searchQuery) {
             todayEvents = todayEvents.filter(e => e.title.toLowerCase().includes(searchQuery));
             tomorrowEvents = tomorrowEvents.filter(e => e.title.toLowerCase().includes(searchQuery));
@@ -85,11 +88,15 @@ bot.on('inline_query', async (ctx) => {
         const formatEvents = (evs, title) => {
             if (evs.length === 0) return `На ${title.toLowerCase()} у меня нет планов! 🏖`;
             let txt = `📅 <b>Мой план на ${title.toLowerCase()}:</b>\n\n`;
+            
             evs.forEach(ev => {
-                let timeStr = ev.is_all_day ? '(Весь день)' : new Date(ev.event_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+                // Форматируем время с учетом часового пояса
+                let timeStr = ev.is_all_day ? '(Весь день)' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { timeZone: USER_TZ, hour: '2-digit', minute: '2-digit' });
+                
                 if (!ev.is_all_day && ev.end_date) {
-                    timeStr += ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
+                    timeStr += ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { timeZone: USER_TZ, hour: '2-digit', minute: '2-digit' })}`;
                 }
+                
                 const emoji = ev.is_completed ? '✅' : '🔹';
                 txt += `${emoji} ${escapeHtmlBot(ev.title)} <i>${timeStr}</i>\n`;
             });
@@ -98,7 +105,6 @@ bot.on('inline_query', async (ctx) => {
 
         const results = [];
 
-        // Добавляем результаты только если там что-то есть, либо если мы ничего не искали
         if (todayEvents.length > 0 || !searchQuery) {
             results.push({
                 type: 'article', id: 'today',
@@ -117,7 +123,6 @@ bot.on('inline_query', async (ctx) => {
             });
         }
 
-        // Если искали, но ничего не нашли
         if (results.length === 0) {
             results.push({
                 type: 'article', id: 'not_found',
@@ -127,9 +132,7 @@ bot.on('inline_query', async (ctx) => {
             });
         }
 
-        // is_personal: true — гарантия того, что Telegram не покажет ваши дела другим людям из глобального кэша
         return ctx.answerInlineQuery(results, { cache_time: 0, is_personal: true });
-        
     } catch (e) { 
         console.error('Ошибка инлайн-режима:', e); 
     }
