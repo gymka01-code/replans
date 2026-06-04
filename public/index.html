@@ -21,8 +21,7 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; padding-bottom: 80px;}
 
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 10px; background: var(--bg-color); position: sticky; top: 0; z-index: 10; }
         .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
@@ -30,38 +29,55 @@
         .add-btn { background: var(--accent-color); color: var(--accent-text); border: none; width: 36px; height: 36px; border-radius: 18px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3); transition: 0.1s; }
         .add-btn:active { transform: scale(0.9); }
 
-        .events-container { padding: 0 20px 100px; }
-        .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; }
+        .filter-wrapper { padding: 0 20px 10px; position: sticky; top: 60px; background: var(--bg-color); z-index: 10; }
+        .filter-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: none; background: var(--card-bg); color: var(--text-color); font-size: 15px; outline: none; appearance: none; font-family: inherit; font-weight: 500; box-shadow: 0 1px 5px rgba(0,0,0,0.03);}
+
+        .events-container { padding: 0 20px; }
+        .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; line-height: 1.4; }
 
         .day-group { margin-bottom: 24px; }
-        .day-header { font-size: 15px; font-weight: 600; color: var(--hint-color); margin-bottom: 10px; text-transform: uppercase; position: sticky; top: 60px; background: var(--bg-color); padding: 5px 0; z-index: 5; }
+        .day-header { font-size: 15px; font-weight: 600; color: var(--hint-color); margin-bottom: 10px; text-transform: uppercase; position: sticky; top: 110px; background: var(--bg-color); padding: 5px 0; z-index: 5; }
 
-        .event-card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: opacity 0.2s; }
-        .event-card:active { opacity: 0.7; }
-        .event-content { flex-grow: 1; cursor: pointer; } /* Кликабельная зона для редактирования */
+        .event-card { position: relative; background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: 0.2s; user-select: none; -webkit-user-select: none; border: 2px solid transparent;}
+        .event-card:active { transform: scale(0.98); }
+        .event-content { flex-grow: 1; pointer-events: none; } /* Блокируем внутренние клики для простоты обработки карточки */
         
         .event-title { font-size: 17px; font-weight: 600; display: block; margin-bottom: 4px; }
         .event-time { font-size: 14px; color: var(--accent-color); font-weight: 500; }
         .event-comment { font-size: 14px; color: var(--hint-color); margin-top: 6px; display: block; line-height: 1.3;}
         .event-meta { font-size: 12px; color: var(--hint-color); margin-top: 6px; display: block; opacity: 0.7;}
         
-        .delete-btn { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px; }
+        .delete-btn { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px; transition: 0.2s; }
 
+        /* Стили режима выделения (Mass Delete) */
+        .checkbox-circle { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hint-color); opacity: 0; transition: 0.2s; pointer-events: none; display: flex; align-items: center; justify-content: center;}
+        body.select-mode .checkbox-circle { opacity: 1; }
+        body.select-mode .event-card { padding-left: 50px; cursor: pointer; }
+        body.select-mode .delete-btn { opacity: 0; pointer-events: none; }
+        .event-card.selected { border-color: var(--danger-color); background: rgba(255, 59, 48, 0.03); }
+        .event-card.selected .checkbox-circle { background: var(--danger-color); border-color: var(--danger-color); }
+        .event-card.selected .checkbox-circle::after { content: ""; width: 6px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
+
+        .bulk-action-bar { position: fixed; bottom: -100px; left: 0; width: 100%; padding: 16px 20px 30px; background: var(--card-bg); box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 50; }
+        .bulk-action-bar.active { bottom: 0; }
+        #bulk-count { font-weight: 600; font-size: 16px; }
+        .bulk-actions { display: flex; gap: 8px; }
+        .text-btn { background: var(--bg-color); border: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--text-color); cursor: pointer; transition: 0.1s;}
+        .text-btn:active { opacity: 0.7; }
+        .text-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); }
+
+        /* Модалка */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
         .overlay.active { opacity: 1; visibility: visible; }
-
         .modal { position: fixed; bottom: -100%; left: 0; width: 100%; height: 90vh; background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto; }
         .modal.active { bottom: 0; }
-
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h2 { margin: 0; font-size: 20px; }
         .close-btn { background: none; border: none; color: var(--accent-color); font-size: 16px; font-weight: 500; padding: 0;}
-
         .input-group { background: var(--card-bg); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
         .input-group input, .input-group textarea { width: 100%; border: none; background: transparent; color: var(--text-color); font-size: 17px; padding: 12px 0; outline: none; font-family: inherit; }
         .input-group textarea { resize: none; min-height: 60px; }
         .divider { height: 1px; background: var(--bg-color); margin: 0 -16px; }
-
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 17px;}
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -69,18 +85,14 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: var(--accent-color); }
         input:checked + .slider:before { transform: translateX(20px); }
-
         .time-wrapper { transition: 0.3s; overflow: hidden; }
         .time-wrapper.hidden { display: none; }
-
         .chips-title { font-size: 14px; font-weight: 500; color: var(--hint-color); margin-bottom: 6px;}
         .chips-subtitle { font-size: 12px; color: var(--hint-color); margin-bottom: 12px; opacity: 0.7;}
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
         .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; cursor: pointer; }
         .chip.active { background: var(--accent-color); color: var(--accent-text); border-color: var(--accent-color); }
-
         .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
-        
         .flatpickr-calendar { background: var(--card-bg) !important; border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;}
         .flatpickr-day { color: var(--text-color) !important; }
         .flatpickr-day.selected { background: var(--accent-color) !important; border-color: var(--accent-color) !important; }
@@ -94,25 +106,40 @@
         <button class="add-btn" onclick="openModal()">+</button>
     </div>
 
+    <!-- Фильтр по типам дел -->
+    <div class="filter-wrapper">
+        <select id="event-filter" class="filter-select" onchange="onFilterChange()">
+            <option value="ALL">Все типы дел</option>
+        </select>
+    </div>
+
     <div class="events-container" id="events-list"></div>
 
+    <!-- Панель для массового удаления -->
+    <div id="bulk-action-bar" class="bulk-action-bar">
+        <span id="bulk-count">Выбрано: 0</span>
+        <div class="bulk-actions">
+            <button class="text-btn" onclick="selectAllFiltered()">Все</button>
+            <button class="text-btn danger" onclick="deleteSelected()">Удалить</button>
+            <button class="text-btn" onclick="toggleSelectMode(false)">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно -->
     <div class="overlay" id="overlay" onclick="closeModal()"></div>
     <div class="modal" id="modal">
         <div class="modal-header">
             <h2 id="modal-title">Новое дело</h2>
             <button class="close-btn" onclick="closeModal()">Отмена</button>
         </div>
-
         <div class="input-group">
             <input type="text" id="title" placeholder="Название (например, Смена 2/2)" autocomplete="off">
             <div class="divider"></div>
             <textarea id="comment" placeholder="Комментарий (необязательно)"></textarea>
         </div>
-
         <div class="input-group">
             <input type="text" id="dates-picker" placeholder="Выбери даты">
             <div class="divider"></div>
-            
             <div class="row-item">
                 <span>Весь день</span>
                 <label class="switch">
@@ -120,13 +147,11 @@
                     <span class="slider"></span>
                 </label>
             </div>
-
             <div id="time-wrapper" class="time-wrapper">
                 <div class="divider"></div>
                 <input type="time" id="time-picker" value="09:00">
             </div>
         </div>
-
         <div class="chips-title">Напомнить за:</div>
         <div class="chips-subtitle">Если ничего не выбрать, напоминаний не будет</div>
         <div class="chips-container" id="chips">
@@ -138,7 +163,6 @@
             <div class="chip" data-val="10">10 мин</div>
             <div class="chip" data-val="5">5 мин</div>
         </div>
-
         <button class="save-btn" id="save-btn" onclick="saveEvent()">Сохранить в график</button>
     </div>
 
@@ -151,8 +175,16 @@
         const userId = tg.initDataUnsafe?.user?.id || '123456789';
         let selectedPrefs = [];
         let datePickerInstance;
-        let allEventsCache = []; // Кэш для редактирования
-        let editingEventId = null; // ID редактируемого события (если null - значит создание)
+        let allEventsCache = [];
+        let editingEventId = null;
+
+        // Переменные для режима выделения и фильтра
+        let currentFilter = 'ALL';
+        let isSelectMode = false;
+        let selectedIds = new Set();
+        let pressTimer;
+        let isLongPress = false;
+        let startY = 0;
 
         document.getElementById('all-day-toggle').addEventListener('change', function(e) {
             tg.HapticFeedback.selectionChanged();
@@ -173,25 +205,218 @@
                 tg.HapticFeedback.impactOccurred('light');
                 this.classList.toggle('active');
                 const val = parseInt(this.dataset.val);
-                if (selectedPrefs.includes(val)) {
-                    selectedPrefs = selectedPrefs.filter(v => v !== val);
-                } else {
-                    selectedPrefs.push(val);
-                }
+                if (selectedPrefs.includes(val)) selectedPrefs = selectedPrefs.filter(v => v !== val);
+                else selectedPrefs.push(val);
             });
         });
 
-        // Открытие модалки (если передан id, то это редактирование)
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Обновление выпадающего списка фильтров
+        function updateFilterOptions() {
+            const select = document.getElementById('event-filter');
+            const uniqueTitles = [...new Set(allEventsCache.map(e => e.title))];
+            
+            let optionsHtml = '<option value="ALL">Все типы дел</option>';
+            uniqueTitles.forEach(title => {
+                optionsHtml += `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`;
+            });
+            
+            select.innerHTML = optionsHtml;
+            select.value = currentFilter;
+            if (select.selectedIndex === -1) {
+                select.value = 'ALL';
+                currentFilter = 'ALL';
+            }
+        }
+
+        function onFilterChange() {
+            currentFilter = document.getElementById('event-filter').value;
+            if (isSelectMode) toggleSelectMode(false);
+            renderEvents();
+        }
+
+        const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
+        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+
+        function getRelativeDayName(dateObj) {
+            const today = new Date();
+            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+            if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
+            if (dateObj.toDateString() === tomorrow.toDateString()) return "Завтра";
+            return `${dateObj.getDate()} ${months[dateObj.getMonth()]}, ${days[dateObj.getDay()]}`;
+        }
+
+        async function loadEvents() {
+            try {
+                const res = await fetch(`/api/events?userId=${userId}`);
+                allEventsCache = await res.json();
+                updateFilterOptions();
+                renderEvents();
+            } catch (e) { console.error(e); }
+        }
+
+        function renderEvents() {
+            const list = document.getElementById('events-list');
+            const filteredEvents = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
+
+            if (filteredEvents.length === 0) {
+                list.innerHTML = `<div class="empty-state">Дела не найдены.<br>Нажми + чтобы добавить дела или смены.</div>`;
+                return;
+            }
+
+            const groupedEvents = {};
+            filteredEvents.forEach(ev => {
+                const dateObj = new Date(ev.event_date);
+                const dateKey = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).toISOString();
+                if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
+                groupedEvents[dateKey].push(ev);
+            });
+
+            list.innerHTML = '';
+            Object.keys(groupedEvents).sort().forEach(dateKey => {
+                const groupDate = new Date(dateKey);
+                let groupHTML = `<div class="day-group"><div class="day-header">${getRelativeDayName(groupDate)}</div>`;
+                    
+                groupedEvents[dateKey].forEach(ev => {
+                    const timeString = ev.is_all_day ? 'Весь день' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    const commentHtml = ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : '';
+                    const prefsText = (ev.notify_prefs && ev.notify_prefs.length > 0) 
+                        ? `🔔 Напомнит за: ` + ev.notify_prefs.map(p => p >= 60 ? (p/60 + 'ч') : (p + 'м')).join(', ')
+                        : '🔕 Без напоминаний';
+
+                    const isSelected = selectedIds.has(ev.id) ? 'selected' : '';
+
+                    groupHTML += `
+                        <div class="event-card ${isSelected}" id="card-${ev.id}"
+                             ontouchstart="handleTouchStart(event, ${ev.id})"
+                             ontouchend="handleTouchEnd(event)"
+                             ontouchmove="handleTouchMove(event)"
+                             onmousedown="handleTouchStart(event, ${ev.id})"
+                             onmouseup="handleTouchEnd(event)"
+                             onmouseleave="handleTouchEnd(event)"
+                             onclick="handleCardClick(event, ${ev.id})">
+                             
+                            <div class="checkbox-circle" id="check-${ev.id}"></div>
+                            
+                            <div class="event-content">
+                                <span class="event-title">${escapeHtml(ev.title)}</span>
+                                <span class="event-time">${timeString}</span>
+                                ${commentHtml}
+                                <span class="event-meta">${prefsText}</span>
+                            </div>
+
+                            <button class="delete-btn" onclick="deleteSingleEvent(event, ${ev.id})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                });
+                groupHTML += `</div>`;
+                list.innerHTML += groupHTML;
+            });
+        }
+
+        // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ И ВЫДЕЛЕНИЯ ---
+        window.handleTouchStart = function(e, id) {
+            if (isSelectMode) return; // В режиме выделения просто работает клик
+            if (e.touches) startY = e.touches[0].clientY;
+            
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                tg.HapticFeedback.impactOccurred('heavy');
+                toggleSelectMode(true);
+                toggleSelection(id);
+            }, 500); // 500 мс для срабатывания долгого нажатия
+        };
+
+        window.handleTouchMove = function(e) {
+            // Отменяем долгое нажатие при скроллинге
+            if (e.touches) {
+                let currentY = e.touches[0].clientY;
+                if (Math.abs(currentY - startY) > 10) clearTimeout(pressTimer);
+            }
+        };
+
+        window.handleTouchEnd = function(e) {
+            clearTimeout(pressTimer);
+        };
+
+        window.handleCardClick = function(e, id) {
+            if (isLongPress) return; // Игнорируем обычный клик сразу после долгого
+            
+            if (isSelectMode) {
+                toggleSelection(id);
+            } else {
+                openModal(id);
+            }
+        };
+
+        function toggleSelectMode(force) {
+            isSelectMode = force !== undefined ? force : !isSelectMode;
+            if (isSelectMode) {
+                document.body.classList.add('select-mode');
+                document.getElementById('bulk-action-bar').classList.add('active');
+            } else {
+                document.body.classList.remove('select-mode');
+                document.getElementById('bulk-action-bar').classList.remove('active');
+                selectedIds.clear();
+                renderEvents(); // Сбрасываем UI выделения
+            }
+        }
+
+        function toggleSelection(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+                document.getElementById(`card-${id}`).classList.remove('selected');
+            } else {
+                selectedIds.add(id);
+                document.getElementById(`card-${id}`).classList.add('selected');
+            }
+            document.getElementById('bulk-count').textContent = `Выбрано: ${selectedIds.size}`;
+        }
+
+        function selectAllFiltered() {
+            const filteredEvents = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
+            if (selectedIds.size === filteredEvents.length) {
+                selectedIds.clear(); // Отменить все
+            } else {
+                filteredEvents.forEach(ev => selectedIds.add(ev.id)); // Выбрать все
+            }
+            document.getElementById('bulk-count').textContent = `Выбрано: ${selectedIds.size}`;
+            renderEvents(); // Перерисовать галочки
+        }
+
+        async function deleteSelected() {
+            if (selectedIds.size === 0) return;
+            tg.HapticFeedback.impactOccurred('heavy');
+            tg.showConfirm(`Удалить выбранные дела (${selectedIds.size} шт.)?`, async (yes) => {
+                if (yes) {
+                    await fetch('/api/events/bulk-delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: Array.from(selectedIds) })
+                    });
+                    tg.HapticFeedback.notificationOccurred('success');
+                    toggleSelectMode(false);
+                    loadEvents();
+                }
+            });
+        }
+
+        // --- ЛОГИКА СОЗДАНИЯ И РЕДАКТИРОВАНИЯ ---
         function openModal(id = null) {
             tg.HapticFeedback.impactOccurred('medium');
             editingEventId = id;
             
             const titleEl = document.getElementById('modal-title');
-            const datesPickerEl = document.getElementById('dates-picker');
             const saveBtnEl = document.getElementById('save-btn');
 
             if (id !== null) {
-                // Режим редактирования
                 const ev = allEventsCache.find(e => e.id === id);
                 titleEl.textContent = 'Редактировать';
                 saveBtnEl.textContent = 'Сохранить изменения';
@@ -200,10 +425,8 @@
                 document.getElementById('comment').value = ev.comment || '';
                 
                 const d = new Date(ev.event_date);
-                // Формат YYYY-MM-DD для календаря
                 const dateString = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
                 
-                // Переключаем календарь в одиночный режим
                 datePickerInstance.set('mode', 'single');
                 datePickerInstance.setDate(dateString);
                 
@@ -215,16 +438,13 @@
                     document.getElementById('time-picker').value = timeString;
                 }
 
-                // Восстанавливаем выбранные напоминания
                 selectedPrefs = ev.notify_prefs || [];
                 document.querySelectorAll('.chip').forEach(chip => {
                     const val = parseInt(chip.dataset.val);
                     if (selectedPrefs.includes(val)) chip.classList.add('active');
                     else chip.classList.remove('active');
                 });
-
             } else {
-                // Режим создания нового
                 titleEl.textContent = 'Новое дело';
                 saveBtnEl.textContent = 'Сохранить в график';
                 datePickerInstance.set('mode', 'multiple');
@@ -248,73 +468,6 @@
             editingEventId = null;
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
-        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
-
-        function getRelativeDayName(dateObj) {
-            const today = new Date();
-            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
-            if (dateObj.toDateString() === tomorrow.toDateString()) return "Завтра";
-            return `${dateObj.getDate()} ${months[dateObj.getMonth()]}, ${days[dateObj.getDay()]}`;
-        }
-
-        async function loadEvents() {
-            try {
-                const res = await fetch(`/api/events?userId=${userId}`);
-                allEventsCache = await res.json(); // Сохраняем в кэш для редактирования
-                const list = document.getElementById('events-list');
-                
-                if (allEventsCache.length === 0) {
-                    list.innerHTML = `<div class="empty-state">График пуст.<br>Нажми + чтобы добавить дела или смены.</div>`;
-                    return;
-                }
-
-                const groupedEvents = {};
-                allEventsCache.forEach(ev => {
-                    const dateObj = new Date(ev.event_date);
-                    const dateKey = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).toISOString();
-                    if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
-                    groupedEvents[dateKey].push(ev);
-                });
-
-                list.innerHTML = '';
-                Object.keys(groupedEvents).sort().forEach(dateKey => {
-                    const groupDate = new Date(dateKey);
-                    let groupHTML = `<div class="day-group"><div class="day-header">${getRelativeDayName(groupDate)}</div>`;
-                        
-                    groupedEvents[dateKey].forEach(ev => {
-                        const timeString = ev.is_all_day ? 'Весь день' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                        const commentHtml = ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : '';
-                        const prefsText = (ev.notify_prefs && ev.notify_prefs.length > 0) 
-                            ? `🔔 Напомнит за: ` + ev.notify_prefs.map(p => p >= 60 ? (p/60 + 'ч') : (p + 'м')).join(', ')
-                            : '🔕 Без напоминаний';
-
-                        groupHTML += `
-                            <div class="event-card">
-                                <div class="event-content" onclick="openModal(${ev.id})">
-                                    <span class="event-title">${ev.title}</span>
-                                    <span class="event-time">${timeString}</span>
-                                    ${commentHtml}
-                                    <span class="event-meta">${prefsText}</span>
-                                </div>
-                                <button class="delete-btn" onclick="deleteEvent(${ev.id})">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                </button>
-                            </div>
-                        `;
-                    });
-                    groupHTML += `</div>`;
-                    list.innerHTML += groupHTML;
-                });
-            } catch (e) { console.error(e); }
-        }
-
         async function saveEvent() {
             const title = document.getElementById('title').value;
             const comment = document.getElementById('comment').value;
@@ -333,7 +486,6 @@
             const [hours, minutes] = isAllDay ? [0, 0] : timeVal.split(':');
             
             if (editingEventId !== null) {
-                // РЕДАКТИРОВАНИЕ ОДНОГО ДЕЛА
                 const newDate = new Date(selectedDates[0]);
                 newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
@@ -343,7 +495,6 @@
                     body: JSON.stringify({ title, date: newDate.toISOString(), notifyPrefs: selectedPrefs, comment, isAllDay })
                 });
             } else {
-                // СОЗДАНИЕ НОВЫХ ДЕЛ
                 const finalDates = selectedDates.map(d => {
                     const newDate = new Date(d);
                     newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -362,7 +513,8 @@
             loadEvents();
         }
 
-        async function deleteEvent(id) {
+        window.deleteSingleEvent = function(e, id) {
+            e.stopPropagation(); // Останавливаем клик, чтобы не открылась карточка
             tg.HapticFeedback.impactOccurred('heavy');
             tg.showConfirm('Удалить это из графика?', async (yes) => {
                 if (yes) {
@@ -371,7 +523,7 @@
                     loadEvents();
                 }
             });
-        }
+        };
 
         loadEvents();
     </script>
