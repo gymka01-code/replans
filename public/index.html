@@ -2,97 +2,316 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ежедневник</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Системные шрифты Apple и базовые настройки */
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f2f2f7);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --accent-color: var(--tg-theme-button-color, #007aff);
+            --accent-text: var(--tg-theme-button-text-color, #ffffff);
+            --hint-color: var(--tg-theme-hint-color, #8e8e93);
+            --danger-color: #ff3b30;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: sans-serif;
-            background-color: var(--tg-theme-bg-color, #fff);
-            color: var(--tg-theme-text-color, #000);
-            padding: 15px; margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overscroll-behavior-y: none;
         }
-        input, button {
-            width: 100%; padding: 10px; margin-bottom: 10px;
-            box-sizing: border-box; border-radius: 8px; border: 1px solid #ccc;
+
+        /* Главный экран */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 20px 10px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-color);
+            z-index: 10;
         }
-        button { background-color: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); border: none; font-weight: bold; }
-        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 14px;}
-        .event-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;}
-        .delete-btn { width: auto; background: red; margin: 0; padding: 5px 10px; }
+
+        .header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 0.5px; }
+        
+        .add-btn {
+            background: var(--accent-color);
+            color: var(--accent-text);
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 18px;
+            font-size: 24px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+            transition: transform 0.1s;
+        }
+        .add-btn:active { transform: scale(0.9); }
+
+        .events-container { padding: 10px 20px 100px; }
+        .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; }
+
+        /* Карточка события */
+        .event-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        
+        .event-info { display: flex; flex-direction: column; gap: 4px; }
+        .event-title { font-size: 17px; font-weight: 600; }
+        .event-time { font-size: 14px; color: var(--accent-color); font-weight: 500;}
+        .event-meta { font-size: 12px; color: var(--hint-color); display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;}
+        
+        .delete-btn {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger-color);
+            border: none;
+            width: 32px; height: 32px;
+            border-radius: 10px;
+            font-size: 16px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+
+        /* Модальное окно (Bottom Sheet) */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            opacity: 0; visibility: hidden;
+            transition: 0.3s; z-index: 99;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+
+        .modal {
+            position: fixed; bottom: -100%; left: 0; width: 100%;
+            background: var(--bg-color);
+            border-radius: 24px 24px 0 0;
+            padding: 24px 20px;
+            transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+        .modal.active { bottom: 0; }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; font-size: 20px; }
+        .close-btn { background: none; border: none; color: var(--accent-color); font-size: 16px; font-weight: 500; padding: 0;}
+
+        /* Инпуты */
+        .input-group { background: var(--card-bg); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
+        .input-group input {
+            width: 100%; border: none; background: transparent;
+            color: var(--text-color); font-size: 17px; padding: 12px 0;
+            outline: none; font-family: inherit;
+        }
+        .divider { height: 1px; background: var(--bg-color); margin: 0 -16px; }
+
+        /* Кнопки-таблетки для уведомлений */
+        .chips-title { font-size: 14px; font-weight: 500; color: var(--hint-color); margin-bottom: 10px;}
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .chip {
+            background: var(--card-bg); color: var(--text-color);
+            padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: 0.2s; cursor: pointer;
+        }
+        .chip.active { background: var(--accent-color); color: var(--accent-text); border-color: var(--accent-color); }
+
+        .save-btn {
+            width: 100%; background: var(--accent-color); color: var(--accent-text);
+            border: none; padding: 16px; border-radius: 14px;
+            font-size: 17px; font-weight: 600; cursor: pointer;
+        }
+        .save-btn:active { opacity: 0.8; }
     </style>
 </head>
 <body>
-    <h3>Добавить дело 📅</h3>
-    <input type="text" id="title" placeholder="Что нужно сделать?" required>
-    <input type="datetime-local" id="date" required>
-    
-    <p>Напомнить за:</p>
-    <div class="checkbox-grid">
-        <label><input type="checkbox" value="1440"> 24 часа</label>
-        <label><input type="checkbox" value="720"> 12 часов</label>
-        <label><input type="checkbox" value="180"> 3 часа</label>
-        <label><input type="checkbox" value="60"> 1 час</label>
-        <label><input type="checkbox" value="30"> 30 минут</label>
-        <label><input type="checkbox" value="10"> 10 минут</label>
-        <label><input type="checkbox" value="5"> 5 минут</label>
-    </div>
-    
-    <button onclick="saveEvent()">Сохранить</button>
 
-    <h3>Мои дела:</h3>
-    <div id="events-list"></div>
+    <div class="header">
+        <h1>Ежедневник</h1>
+        <button class="add-btn" onclick="openModal()">+</button>
+    </div>
+
+    <div class="events-container" id="events-list">
+        <!-- Карточки будут здесь -->
+    </div>
+
+    <!-- Модальное окно создания -->
+    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h2>Новое дело</h2>
+            <button class="close-btn" onclick="closeModal()">Отмена</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="title" placeholder="Название (например, Смена)" autocomplete="off">
+            <div class="divider"></div>
+            <input type="datetime-local" id="date">
+        </div>
+
+        <div class="chips-title">Напомнить за:</div>
+        <div class="chips-container" id="chips">
+            <div class="chip" data-val="1440">1 день</div>
+            <div class="chip" data-val="720">12 часов</div>
+            <div class="chip" data-val="180">3 часа</div>
+            <div class="chip" data-val="60">1 час</div>
+            <div class="chip" data-val="30">30 мин</div>
+            <div class="chip" data-val="10">10 мин</div>
+            <div class="chip" data-val="5">5 мин</div>
+        </div>
+
+        <button class="save-btn" onclick="saveEvent()">Сохранить</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const userId = tg.initDataUnsafe?.user?.id || '123456789'; // 123456789 для теста в браузере
+        // Сообщаем телеграму, что мы готовы и задаем цвет шапки под фон
+        tg.ready();
+        tg.setHeaderColor('bg_color');
+
+        const userId = tg.initDataUnsafe?.user?.id || '123456789';
+        let selectedPrefs = [];
+
+        // Логика кнопок-таблеток (выбор уведомлений)
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                tg.HapticFeedback.impactOccurred('light');
+                this.classList.toggle('active');
+                const val = parseInt(this.dataset.val);
+                if (selectedPrefs.includes(val)) {
+                    selectedPrefs = selectedPrefs.filter(v => v !== val);
+                } else {
+                    selectedPrefs.push(val);
+                }
+            });
+        });
+
+        function openModal() {
+            tg.HapticFeedback.impactOccurred('medium');
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('modal').classList.add('active');
+            // Ставим текущее время по умолчанию
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('date').value = now.toISOString().slice(0,16);
+        }
+
+        function closeModal() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('modal').classList.remove('active');
+            // Сброс формы
+            document.getElementById('title').value = '';
+            selectedPrefs = [];
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        }
+
+        // Красивое форматирование даты (в стиле iOS)
+        function formatAppleDate(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            
+            if (date.toDateString() === today.toDateString()) return `Сегодня, ${time}`;
+            if (date.toDateString() === tomorrow.toDateString()) return `Завтра, ${time}`;
+            
+            return `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}, ${time}`;
+        }
+
+        // Перевод минут в текст для плашек карточки
+        function getPrefsText(prefs) {
+            if (!prefs || prefs.length === 0) return '';
+            return prefs.map(p => p >= 60 ? (p/60 + 'ч') : (p + 'м')).join(', ');
+        }
 
         async function loadEvents() {
-            const res = await fetch(`/api/events?userId=${userId}`);
-            const events = await res.json();
-            const list = document.getElementById('events-list');
-            list.innerHTML = '';
-            
-            events.forEach(ev => {
-                list.innerHTML += `
-                    <div class="event-card">
-                        <div>
-                            <strong>${ev.title}</strong><br>
-                            <small>${new Date(ev.event_date).toLocaleString()}</small>
+            try {
+                const res = await fetch(`/api/events?userId=${userId}`);
+                const events = await res.json();
+                const list = document.getElementById('events-list');
+                
+                if (events.length === 0) {
+                    list.innerHTML = `<div class="empty-state">Нет запланированных дел.<br>Нажми + чтобы добавить.</div>`;
+                    return;
+                }
+
+                list.innerHTML = '';
+                events.forEach(ev => {
+                    const prefsText = getPrefsText(ev.notify_prefs);
+                    list.innerHTML += `
+                        <div class="event-card">
+                            <div class="event-info">
+                                <span class="event-title">${ev.title}</span>
+                                <span class="event-time">${formatAppleDate(ev.event_date)}</span>
+                                ${prefsText ? `<span class="event-meta">🔔 Напомнит за: ${prefsText}</span>` : ''}
+                            </div>
+                            <button class="delete-btn" onclick="deleteEvent(${ev.id})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
                         </div>
-                        <button class="delete-btn" onclick="deleteEvent(${ev.id})">❌</button>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         async function saveEvent() {
             const title = document.getElementById('title').value;
             const date = document.getElementById('date').value;
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-            const notifyPrefs = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
-            if (!title || !date) return tg.showAlert('Заполни название и дату!');
+            if (!title || !date) {
+                tg.HapticFeedback.notificationOccurred('error');
+                return tg.showAlert('Укажи название и время!');
+            }
+
+            // Анимация кнопки
+            const btn = document.querySelector('.save-btn');
+            btn.textContent = 'Сохранение...';
 
             await fetch('/api/events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, title, date, notifyPrefs })
+                body: JSON.stringify({ userId, title, date, notifyPrefs: selectedPrefs })
             });
 
-            document.getElementById('title').value = '';
-            document.getElementById('date').value = '';
-            checkboxes.forEach(cb => cb.checked = false);
             tg.HapticFeedback.notificationOccurred('success');
+            btn.textContent = 'Сохранить';
+            closeModal();
             loadEvents();
         }
 
         async function deleteEvent(id) {
-            await fetch(`/api/events/${id}`, { method: 'DELETE' });
-            loadEvents();
+            tg.HapticFeedback.impactOccurred('heavy');
+            // Простая нативная модалка Telegram для подтверждения
+            tg.showConfirm('Точно удалить это дело?', async (yes) => {
+                if (yes) {
+                    await fetch(`/api/events/${id}`, { method: 'DELETE' });
+                    tg.HapticFeedback.notificationOccurred('success');
+                    loadEvents();
+                }
+            });
         }
 
+        // Загружаем дела при старте
         loadEvents();
     </script>
 </body>
