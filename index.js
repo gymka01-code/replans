@@ -23,11 +23,10 @@ async function initDB() {
                 is_all_day BOOLEAN DEFAULT FALSE,
                 color VARCHAR(20) DEFAULT 'blue',
                 is_completed BOOLEAN DEFAULT FALSE,
-                subtasks JSONB DEFAULT '[]'
+                subtasks JSONB DEFAULT '[]',
+                end_date TIMESTAMP
             );
         `);
-        // НОВОЕ: Добавляем колонку для времени окончания
-        await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS end_date TIMESTAMP;`);
         console.log("База данных проверена и готова");
     } catch (e) { console.error("Ошибка БД:", e); }
 }
@@ -39,24 +38,22 @@ app.use(express.json());
 app.use(express.static('public'));
 
 bot.start((ctx) => {
-    ctx.reply('Привет! Твой личный ежедневник готов 📅\n\nЯ умею распознавать текст (напиши "завтра в 15:00 тренировка").\nА еще ты можешь упомянуть меня в любом чате (@твой_бот), чтобы быстро скинуть свои планы друзьям!', {
+    ctx.reply('Привет! Твой личный ежедневник готов 📅\n\nЯ умею распознавать текст (скоро). А еще ты можешь упомянуть меня в любом чате (@твой_бот), чтобы быстро скинуть свои планы друзьям!', {
         reply_markup: { inline_keyboard: [[ { text: 'Открыть ежедневник', web_app: { url: process.env.WEBAPP_URL } } ]] }
     });
 });
 
-// Вспомогательная функция для безопасного текста в ТГ
 const escapeHtmlBot = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// ИНЛАЙН-РЕЖИМ (Шеринг планов в других чатах)
+// ИНЛАЙН-РЕЖИМ С ЧАСОВЫМ ПОЯСОМ И ПОИСКОМ
 bot.on('inline_query', async (ctx) => {
     try {
         const userId = ctx.from.id;
         const searchQuery = ctx.inlineQuery.query.toLowerCase().trim();
         
-        // ВАЖНО: Укажите ваш часовой пояс! Например 'Europe/Moscow', 'Asia/Almaty', 'Europe/Kyiv'
+        // ВАЖНО: Укажи свой часовой пояс (например, Europe/Moscow, Asia/Almaty)
         const USER_TZ = process.env.TZ || 'Europe/Moscow'; 
         
-        // Получаем все дела пользователя
         const { rows: events } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
         
         if (!events || events.length === 0) {
@@ -70,13 +67,11 @@ bot.on('inline_query', async (ctx) => {
         const tomorrow = new Date(now);
         tomorrow.setHours(tomorrow.getHours() + 24);
 
-        // Используем 'sv-SE', так как этот формат всегда возвращает YYYY-MM-DD
         const getTzDateStr = (date) => date.toLocaleDateString('sv-SE', { timeZone: USER_TZ });
         
         const todayStr = getTzDateStr(now);
         const tomorrowStr = getTzDateStr(tomorrow);
 
-        // Фильтруем дела с учетом правильного часового пояса
         let todayEvents = events.filter(e => getTzDateStr(new Date(e.event_date)) === todayStr);
         let tomorrowEvents = events.filter(e => getTzDateStr(new Date(e.event_date)) === tomorrowStr);
 
@@ -88,15 +83,11 @@ bot.on('inline_query', async (ctx) => {
         const formatEvents = (evs, title) => {
             if (evs.length === 0) return `На ${title.toLowerCase()} у меня нет планов! 🏖`;
             let txt = `📅 <b>Мой план на ${title.toLowerCase()}:</b>\n\n`;
-            
             evs.forEach(ev => {
-                // Форматируем время с учетом часового пояса
                 let timeStr = ev.is_all_day ? '(Весь день)' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { timeZone: USER_TZ, hour: '2-digit', minute: '2-digit' });
-                
                 if (!ev.is_all_day && ev.end_date) {
                     timeStr += ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { timeZone: USER_TZ, hour: '2-digit', minute: '2-digit' })}`;
                 }
-                
                 const emoji = ev.is_completed ? '✅' : '🔹';
                 txt += `${emoji} ${escapeHtmlBot(ev.title)} <i>${timeStr}</i>\n`;
             });
@@ -104,43 +95,23 @@ bot.on('inline_query', async (ctx) => {
         };
 
         const results = [];
-
         if (todayEvents.length > 0 || !searchQuery) {
-            results.push({
-                type: 'article', id: 'today',
-                title: 'План на сегодня',
-                description: `Дел: ${todayEvents.length}`,
-                input_message_content: { message_text: formatEvents(todayEvents, 'Сегодня'), parse_mode: 'HTML' }
-            });
+            results.push({ type: 'article', id: 'today', title: 'План на сегодня', description: `Дел: ${todayEvents.length}`, input_message_content: { message_text: formatEvents(todayEvents, 'Сегодня'), parse_mode: 'HTML' }});
         }
-
         if (tomorrowEvents.length > 0 || !searchQuery) {
-            results.push({
-                type: 'article', id: 'tomorrow',
-                title: 'План на завтра',
-                description: `Дел: ${tomorrowEvents.length}`,
-                input_message_content: { message_text: formatEvents(tomorrowEvents, 'Завтра'), parse_mode: 'HTML' }
-            });
+            results.push({ type: 'article', id: 'tomorrow', title: 'План на завтра', description: `Дел: ${tomorrowEvents.length}`, input_message_content: { message_text: formatEvents(tomorrowEvents, 'Завтра'), parse_mode: 'HTML' }});
         }
-
         if (results.length === 0) {
-            results.push({
-                type: 'article', id: 'not_found',
-                title: 'Ничего не найдено',
-                description: 'По вашему запросу нет совпадений',
-                input_message_content: { message_text: `По запросу "<b>${escapeHtmlBot(searchQuery)}</b>" ничего не найдено 🤷‍♂️`, parse_mode: 'HTML' }
-            });
+            results.push({ type: 'article', id: 'not_found', title: 'Ничего не найдено', description: 'По вашему запросу нет совпадений', input_message_content: { message_text: `По запросу "<b>${escapeHtmlBot(searchQuery)}</b>" ничего не найдено 🤷‍♂️`, parse_mode: 'HTML' }});
         }
 
         return ctx.answerInlineQuery(results, { cache_time: 0, is_personal: true });
-    } catch (e) { 
-        console.error('Ошибка инлайн-режима:', e); 
-    }
+    } catch (e) { console.error('Ошибка инлайн-режима:', e); }
 });
 
 bot.launch();
 
-// API Ежедневника
+// API
 app.get('/api/events', async (req, res) => {
     const { rows } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [req.query.userId]);
     res.json(rows);
@@ -189,43 +160,32 @@ app.patch('/api/events/:id/subtasks', async (req, res) => {
     res.json({ success: true });
 });
 
-// НОВОЕ: ИСПРАВЛЕННЫЙ ЭКСПОРТ (Бот присылает файл в чат)
 app.post('/api/export', async (req, res) => {
     try {
         const userId = req.body.userId;
         const { rows } = await pool.query('SELECT * FROM events WHERE user_id = $1', [userId]);
-        
         let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//TelegramPlanner//RU\nCALSCALE:GREGORIAN\n';
-        
         const formatICSDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-
         rows.forEach(ev => {
             const startDate = new Date(ev.event_date);
-            const endDate = ev.end_date ? new Date(ev.end_date) : new Date(startDate.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
-
+            const endDate = ev.end_date ? new Date(ev.end_date) : new Date(startDate.getTime() + 60 * 60 * 1000);
             ics += 'BEGIN:VEVENT\n';
             ics += `UID:event-${ev.id}@tgplanner\n`;
             ics += `SUMMARY:${ev.title}\n`;
             if (ev.comment) ics += `DESCRIPTION:${ev.comment}\n`;
-            
             if (ev.is_all_day) {
                 const dateStr = startDate.toISOString().replace(/[-:]/g, '').split('T')[0];
                 ics += `DTSTART;VALUE=DATE:${dateStr}\n`;
             } else {
-                ics += `DTSTART:${formatICSDate(startDate)}\n`;
-                ics += `DTEND:${formatICSDate(endDate)}\n`;
+                ics += `DTSTART:${formatICSDate(startDate)}\nDTEND:${formatICSDate(endDate)}\n`;
             }
             ics += 'END:VEVENT\n';
         });
         ics += 'END:VCALENDAR';
-        
         const buffer = Buffer.from(ics, 'utf-8');
         await bot.telegram.sendDocument(userId, { source: buffer, filename: 'My_Calendar.ics' });
         res.json({ success: true });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ success: false });
-    }
+    } catch (e) { console.error(e); res.status(500).json({ success: false }); }
 });
 
 // Крон для уведомлений
