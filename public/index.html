@@ -25,37 +25,33 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; overflow-x: hidden; }
 
-        /* Header */
         .header-container { position: fixed; top: 0; left: 0; width: 100%; background: rgba(242, 242, 247, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; padding: 20px 20px 12px; border-bottom: 0.5px solid rgba(0, 0, 0, 0.05); }
         @media (prefers-color-scheme: dark) { .header-container { background: rgba(0, 0, 0, 0.65); border-bottom: 0.5px solid rgba(255, 255, 255, 0.1); } }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
         .header h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;}
-        .header-actions { display: flex; gap: 10px; }
+        .header-actions { display: flex; gap: 8px; }
         
-        .icon-btn { background: rgba(118, 118, 128, 0.12); color: var(--text-color); border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .icon-btn { background: rgba(118, 118, 128, 0.12); color: var(--text-color); border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 16px;}
         .icon-btn:active { transform: scale(0.85); }
         .icon-btn.primary { background: var(--accent-color); color: var(--accent-text); box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);}
 
         .filter-select { width: 100%; padding: 8px 12px; border-radius: 10px; border: none; background: rgba(118, 118, 128, 0.12); color: var(--text-color); font-size: 15px; font-weight: 500; outline: none; appearance: none; text-align: center;}
 
-        /* Pages Slider */
         .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding-top: 130px; padding-bottom: 100px; min-height: 100vh; }
         .slider-container::-webkit-scrollbar { display: none; }
         .day-page { min-width: 100vw; scroll-snap-align: center; padding: 0 20px; }
         .day-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
         .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; font-weight: 500; }
 
-        /* Premium Event Card */
-        .event-card { position: relative; background: var(--card-bg); border-radius: 20px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 14px rgba(0,0,0,0.03); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); user-select: none; -webkit-user-select: none; border: 2px solid transparent; overflow: hidden;}
+        .event-card { position: relative; background: var(--card-bg); border-radius: 20px; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 14px rgba(0,0,0,0.03); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); user-select: none; border: 2px solid transparent; overflow: hidden;}
         .event-card:active { transform: scale(0.97); }
         .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
         
-        .event-card-inner { display: flex; align-items: center; width: 100%; padding-left: 10px; gap: 12px;}
-        .event-content { flex-grow: 1; pointer-events: none; transition: 0.3s;} 
+        .event-card-inner { display: flex; align-items: flex-start; width: 100%; padding-left: 10px; gap: 12px;}
+        .event-content { flex-grow: 1; pointer-events: none; transition: 0.3s; width: 100%;} 
         
-        /* Checkbox for Completion */
-        .complete-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--hint-color); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+        .complete-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--hint-color); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.2s; margin-top: 2px;}
         .complete-checkbox.done { background: var(--accent-color); border-color: var(--accent-color); }
         .complete-checkbox.done::after { content: ""; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
         
@@ -63,17 +59,26 @@
         .event-title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; transition: 0.3s;}
         .event-time { font-size: 15px; color: var(--hint-color); font-weight: 500; }
         .event-time.all-day { color: var(--accent-color); background: rgba(0, 122, 255, 0.1); padding: 2px 8px; border-radius: 8px; font-size: 13px; font-weight: 600; text-transform: uppercase;}
-        .event-comment, .event-meta { font-size: 14px; color: var(--hint-color); margin-top: 4px; display: block; opacity: 0.9;}
+        .event-comment { font-size: 14px; color: var(--hint-color); margin-top: 4px; display: block; opacity: 0.9;}
         
-        /* Completed State styling */
+        /* Subtasks Display */
+        .subtasks-list { margin-top: 12px; pointer-events: auto; }
+        .subtask-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; color: var(--text-color); cursor: pointer;}
+        .subtask-item:active { opacity: 0.5; }
+        .subtask-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--hint-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;}
+        .subtask-check.done { background: var(--gray); border-color: var(--gray); }
+        .subtask-check.done::after { content: ""; width: 4px; height: 8px; border: solid white; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-bottom: 1px; }
+        .subtask-text { transition: 0.2s; }
+        .subtask-text.done { text-decoration: line-through; color: var(--hint-color); }
+
         .event-card.is-completed { opacity: 0.6; box-shadow: none; background: rgba(118, 118, 128, 0.05);}
         .event-card.is-completed .event-title { text-decoration: line-through; color: var(--hint-color); }
         .event-card.is-completed .color-strip { background: var(--gray) !important; }
 
-        /* Mass Delete Mode styles */
         .checkbox-circle { position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hint-color); opacity: 0; transition: 0.3s; pointer-events: none; display: flex; align-items: center; justify-content: center;}
         body.select-mode .checkbox-circle { left: 16px; opacity: 1; }
         body.select-mode .event-card-inner { transform: translateX(35px); pointer-events: none;}
+        body.select-mode .subtasks-list { pointer-events: none; }
         .event-card.selected { border-color: var(--red); background: rgba(255, 59, 48, 0.03); }
         .event-card.selected .checkbox-circle { background: var(--red); border-color: var(--red); }
         .event-card.selected .checkbox-circle::after { content: ""; width: 6px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
@@ -84,7 +89,6 @@
         .text-btn { background: rgba(118, 118, 128, 0.12); border: none; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-color); cursor: pointer;}
         .text-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--red); }
 
-        /* Modals & Forms */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
         .overlay.active { opacity: 1; visibility: visible; }
         .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px; transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; }
@@ -94,7 +98,6 @@
         .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
         .close-btn { background: rgba(118, 118, 128, 0.12); border: none; color: var(--text-color); font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 12px; }
 
-        /* Presets */
         .presets-scroll { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
         .presets-scroll::-webkit-scrollbar { display: none; }
         .preset-chip { padding: 8px 14px; background: var(--card-bg); border-radius: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; cursor: pointer;}
@@ -105,12 +108,10 @@
         .input-group textarea { resize: none; min-height: 60px; }
         .divider { height: 0.5px; background: rgba(118, 118, 128, 0.2); margin: 0 -16px; }
         
-        /* Color Picker */
         .color-picker { display: flex; justify-content: space-between; padding: 14px 0; }
         .color-circle { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s;}
         .color-circle.active { border-color: var(--text-color); transform: scale(1.1);}
 
-        /* Toggles */
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; font-size: 17px;}
         .switch { position: relative; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -119,12 +120,18 @@
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(20px); }
         
+        /* Dynamic Subtasks Inputs */
+        .subtasks-builder { display: none; padding-top: 10px; padding-bottom: 10px;}
+        .st-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .st-input-row input { flex-grow: 1; padding: 12px 14px; border-radius: 12px; border: none; background: rgba(118,118,128,0.08); color: var(--text-color); font-size: 16px; outline: none;}
+        .st-del-btn { background: rgba(255, 59, 48, 0.1); color: var(--red); width: 32px; height: 32px; border-radius: 50%; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer;}
+        .add-st-btn { background: transparent; color: var(--accent-color); border: none; font-size: 16px; font-weight: 500; padding: 10px 0; cursor: pointer;}
+
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; margin-top: 10px;}
         .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 15px; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; }
         .chip.active { background: var(--accent-color); color: var(--accent-text); }
         .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
 
-        /* Month Calendar Modal - FIXED AND IMPROVED */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-top: 10px;}
         .cal-header { font-size: 13px; color: var(--hint-color); font-weight: 600; margin-bottom: 4px;}
         .cal-day { padding: 6px 0 16px 0; border-radius: 12px; font-size: 16px; font-weight: 500; position: relative; cursor: pointer; background: var(--card-bg); display: flex; flex-direction: column; align-items: center;}
@@ -133,7 +140,6 @@
         .cal-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; position: absolute; bottom: 4px; left: 2px; right: 2px; max-width: 100%; }
         .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
 
-        /* Stats List */
         .stat-item { display: flex; justify-content: space-between; padding: 14px 16px; background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; font-size: 16px; font-weight: 500;}
         .stat-val { font-weight: 700; color: var(--accent-color); }
     </style>
@@ -144,6 +150,7 @@
         <div class="header">
             <h1>Ежедневник</h1>
             <div class="header-actions">
+                <button class="icon-btn" onclick="exportCalendar()" title="Добавить в Календарь">↗️</button>
                 <button class="icon-btn" onclick="openStatsModal()">📊</button>
                 <button class="icon-btn" onclick="openCalendarModal()">📅</button>
                 <button class="icon-btn primary" onclick="openModal()">+</button>
@@ -154,10 +161,8 @@
         </select>
     </div>
 
-    <!-- Horizontal Swipeable Container -->
     <div class="slider-container" id="slider-container"></div>
 
-    <!-- Mass Delete Panel -->
     <div id="bulk-action-bar" class="bulk-action-bar">
         <span id="bulk-count" style="font-weight:600; font-size:16px;">Выбрано: 0</span>
         <div style="display:flex; gap:8px;">
@@ -167,10 +172,8 @@
         </div>
     </div>
 
-    <!-- Modals Overlay -->
     <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
-    <!-- 1. Stats Modal -->
     <div class="modal" id="stats-modal">
         <div class="modal-header">
             <h2 id="stats-title">Статистика</h2>
@@ -179,7 +182,6 @@
         <div id="stats-content"></div>
     </div>
 
-    <!-- 2. Calendar Modal -->
     <div class="modal" id="calendar-modal">
         <div class="modal-header">
             <h2 id="month-title">Календарь</h2>
@@ -188,7 +190,6 @@
         <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
-    <!-- 3. Edit/Add Modal -->
     <div class="modal" id="modal">
         <div class="modal-header">
             <h2 id="modal-title">Новое дело</h2>
@@ -200,6 +201,7 @@
             <div class="preset-chip" onclick="applyPreset('Тренировка', 'green', false)"><div class="dot" style="background: var(--green)"></div> Тренировка</div>
             <div class="preset-chip" onclick="applyPreset('Встреча', 'blue', false)"><div class="dot" style="background: var(--blue)"></div> Встреча</div>
             <div class="preset-chip" onclick="applyPreset('Отдых', 'purple', true)"><div class="dot" style="background: var(--purple)"></div> Отдых</div>
+            <div class="preset-chip" onclick="applyPreset('Покупки', 'orange', true)"><div class="dot" style="background: var(--orange)"></div> Покупки</div>
         </div>
 
         <div class="input-group">
@@ -214,7 +216,19 @@
             </div>
             <div class="divider"></div>
             <textarea id="comment" placeholder="Добавить примечание..."></textarea>
+            
+            <div class="divider"></div>
+            <div class="row-item">
+                <span>Список дел (Подзадачи)</span>
+                <label class="switch"><input type="checkbox" id="st-toggle" onchange="toggleSubtasksBuilder()"><span class="slider"></span></label>
+            </div>
+            
+            <div class="subtasks-builder" id="subtasks-builder">
+                <div id="st-list"></div>
+                <button class="add-st-btn" onclick="addSubtaskInput()">+ Добавить пункт</button>
+            </div>
         </div>
+        
         <div class="input-group">
             <input type="text" id="dates-picker" placeholder="Выбери даты">
             <div class="divider"></div>
@@ -230,6 +244,7 @@
                 </div>
             </div>
         </div>
+        
         <div style="font-weight:600; font-size:15px;">Напоминание</div>
         <div class="chips-container" id="chips">
             <div class="chip" data-val="1440">1 день</div><div class="chip" data-val="720">12 часов</div><div class="chip" data-val="180">3 часа</div>
@@ -259,16 +274,12 @@
         let pressTimer, isLongPress = false;
         let startX = 0, startY = 0;
 
-        // Вспомогательная функция, чтобы железно получать "YYYY-MM-DD" в местном часовом поясе
         function getLocalDateString(date) {
-            return date.getFullYear() + '-' + 
-                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                   String(date.getDate()).padStart(2, '0');
+            return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             datePickerInstance = flatpickr("#dates-picker", { mode: "multiple", dateFormat: "Y-m-d", locale: "ru", disableMobile: "true" });
-            
             document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', function() {
                 tg.HapticFeedback.impactOccurred('light');
                 this.classList.toggle('active');
@@ -278,6 +289,47 @@
             }));
         });
 
+        // ЭКСПОРТ
+        function exportCalendar() {
+            tg.HapticFeedback.impactOccurred('medium');
+            window.location.href = `/api/calendar/${userId}.ics`;
+        }
+
+        // ПОДЗАДАЧИ (Билдер)
+        function toggleSubtasksBuilder() {
+            tg.HapticFeedback.selectionChanged();
+            const show = document.getElementById('st-toggle').checked;
+            document.getElementById('subtasks-builder').style.display = show ? 'block' : 'none';
+            if (show && document.getElementById('st-list').children.length === 0) addSubtaskInput();
+        }
+
+        function addSubtaskInput(val = '', isDone = false) {
+            const list = document.getElementById('st-list');
+            const id = Date.now() + Math.random();
+            const div = document.createElement('div');
+            div.className = 'st-input-row';
+            div.id = `st-row-${id}`;
+            div.dataset.done = isDone;
+            div.innerHTML = `<input type="text" placeholder="Пункт (например, Молоко)" value="${escapeHtml(val)}"><button class="st-del-btn" onclick="removeSubtaskInput('${id}')">−</button>`;
+            list.appendChild(div);
+        }
+
+        function removeSubtaskInput(id) {
+            const row = document.getElementById(`st-row-${id}`);
+            if (row) row.remove();
+        }
+
+        function getSubtasksFromBuilder() {
+            if (!document.getElementById('st-toggle').checked) return [];
+            const subtasks = [];
+            document.querySelectorAll('.st-input-row').forEach(row => {
+                const val = row.querySelector('input').value.trim();
+                const isDone = row.dataset.done === 'true';
+                if (val) subtasks.push({ title: val, isDone: isDone });
+            });
+            return subtasks;
+        }
+
         function toggleTime() {
             tg.HapticFeedback.selectionChanged();
             document.getElementById('time-wrapper').style.display = document.getElementById('all-day-toggle').checked ? 'none' : 'block';
@@ -286,9 +338,7 @@
         function selectColor(color) {
             tg.HapticFeedback.selectionChanged();
             selectedColor = color;
-            document.querySelectorAll('.color-circle').forEach(el => {
-                el.classList.toggle('active', el.dataset.color === color);
-            });
+            document.querySelectorAll('.color-circle').forEach(el => el.classList.toggle('active', el.dataset.color === color));
         }
 
         function applyPreset(title, color, isAllDay) {
@@ -311,11 +361,16 @@
             } catch (e) { console.error(e); }
         }
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
         function updateFilterOptions() {
             const select = document.getElementById('event-filter');
             const uniqueTitles = [...new Set(allEventsCache.map(e => e.title))];
             let optionsHtml = '<option value="ALL">Все типы дел ▾</option>';
-            uniqueTitles.forEach(t => optionsHtml += `<option value="${t}">${t} ▾</option>`);
+            uniqueTitles.forEach(t => optionsHtml += `<option value="${escapeHtml(t)}">${escapeHtml(t)} ▾</option>`);
             select.innerHTML = optionsHtml;
             select.value = currentFilter;
         }
@@ -327,19 +382,15 @@
         }
 
         function formatDayTitle(dateString) {
-            // dateString приходит в виде "YYYY-MM-DD"
             const [y, m, d] = dateString.split('-');
             const targetDate = new Date(y, m - 1, d);
-            
             const today = new Date();
             const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            
             const tdStr = getLocalDateString(today);
             const tmStr = getLocalDateString(tomorrow);
             
             if (dateString === tdStr) return `Сегодня, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
             if (dateString === tmStr) return `Завтра, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
-            
             return `${days[targetDate.getDay()]}, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
         }
 
@@ -355,7 +406,7 @@
             const groupedEvents = {};
             filteredEvents.forEach(ev => {
                 const d = new Date(ev.event_date);
-                const dateKey = getLocalDateString(d); // Надежная местная дата
+                const dateKey = getLocalDateString(d); 
                 if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
                 groupedEvents[dateKey].push(ev);
             });
@@ -377,6 +428,22 @@
                     const isDone = ev.is_completed ? 'is-completed' : '';
                     const checkClass = ev.is_completed ? 'done' : '';
 
+                    // Рендер подзадач в карточке
+                    let subtasksHtml = '';
+                    if (ev.subtasks && ev.subtasks.length > 0) {
+                        subtasksHtml = `<div class="subtasks-list">`;
+                        ev.subtasks.forEach((st, idx) => {
+                            const stClass = st.isDone ? 'done' : '';
+                            subtasksHtml += `
+                                <div class="subtask-item" onclick="toggleSubtask(event, ${ev.id}, ${idx}, ${!st.isDone})">
+                                    <div class="subtask-check ${stClass}"></div>
+                                    <div class="subtask-text ${stClass}">${escapeHtml(st.title)}</div>
+                                </div>
+                            `;
+                        });
+                        subtasksHtml += `</div>`;
+                    }
+
                     pageHTML += `
                         <div class="event-card ${isSel} ${isDone}" id="card-${ev.id}"
                              ontouchstart="handleTouchStart(event, ${ev.id})" ontouchend="handleTouchEnd(event)" ontouchmove="handleTouchMove(event)"
@@ -389,8 +456,9 @@
                             <div class="event-card-inner">
                                 <div class="complete-checkbox ${checkClass}" onclick="toggleComplete(event, ${ev.id}, ${!ev.is_completed})"></div>
                                 <div class="event-content">
-                                    <div class="event-header"><span class="event-title">${ev.title}</span>${timeHTML}</div>
-                                    ${ev.comment ? `<span class="event-comment">${ev.comment}</span>` : ''}
+                                    <div class="event-header"><span class="event-title">${escapeHtml(ev.title)}</span>${timeHTML}</div>
+                                    ${ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : ''}
+                                    ${subtasksHtml}
                                 </div>
                             </div>
                         </div>
@@ -401,17 +469,26 @@
             });
         }
 
+        // Завершение дела целиком
         async function toggleComplete(e, id, status) {
             e.stopPropagation(); 
             tg.HapticFeedback.impactOccurred('medium');
             const ev = allEventsCache.find(x => x.id === id);
             if(ev) ev.is_completed = status;
             renderEvents();
-            await fetch(`/api/events/${id}/toggle`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isCompleted: status })
-            });
+            await fetch(`/api/events/${id}/toggle`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isCompleted: status }) });
+        }
+
+        // Завершение 1 пункта из чеклиста
+        async function toggleSubtask(e, eventId, subIndex, status) {
+            e.stopPropagation();
+            tg.HapticFeedback.impactOccurred('light');
+            const ev = allEventsCache.find(x => x.id === eventId);
+            if(ev && ev.subtasks && ev.subtasks[subIndex]) {
+                ev.subtasks[subIndex].isDone = status;
+                renderEvents(); // оптимистичное обновление
+                await fetch(`/api/events/${eventId}/subtasks`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subtasks: ev.subtasks }) });
+            }
         }
 
         window.handleTouchStart = function(e, id) {
@@ -470,6 +547,9 @@
             datePickerInstance.clear();
             document.getElementById('title').value = '';
             document.getElementById('comment').value = '';
+            document.getElementById('st-toggle').checked = false;
+            document.getElementById('subtasks-builder').style.display = 'none';
+            document.getElementById('st-list').innerHTML = '';
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
             selectedPrefs = [];
             editingEventId = null;
@@ -485,6 +565,15 @@
                 document.getElementById('title').value = ev.title;
                 document.getElementById('comment').value = ev.comment || '';
                 selectColor(ev.color || 'blue');
+                
+                // Загружаем подзадачи
+                const list = document.getElementById('st-list');
+                list.innerHTML = '';
+                if (ev.subtasks && ev.subtasks.length > 0) {
+                    document.getElementById('st-toggle').checked = true;
+                    document.getElementById('subtasks-builder').style.display = 'block';
+                    ev.subtasks.forEach(st => addSubtaskInput(st.title, st.isDone));
+                }
                 
                 const d = new Date(ev.event_date);
                 datePickerInstance.set('mode', 'single');
@@ -512,12 +601,13 @@
             const dates = datePickerInstance.selectedDates;
             const isAllDay = document.getElementById('all-day-toggle').checked;
             const timeVal = document.getElementById('time-picker').value;
+            const subtasks = getSubtasksFromBuilder();
 
             if (!title || dates.length === 0) return tg.showAlert('Укажите название и дату');
             document.getElementById('save-btn').textContent = 'Сохранение...';
 
             const [h, m] = isAllDay ? [0, 0] : timeVal.split(':');
-            const basePayload = { title, notifyPrefs: selectedPrefs, comment: document.getElementById('comment').value, isAllDay, color: selectedColor };
+            const basePayload = { title, notifyPrefs: selectedPrefs, comment: document.getElementById('comment').value, isAllDay, color: selectedColor, subtasks };
 
             if (editingEventId !== null) {
                 const d = new Date(dates[0]); d.setHours(parseInt(h), parseInt(m), 0, 0);
@@ -530,7 +620,7 @@
             closeAllModals(); loadEvents();
         }
 
-        // ОБНОВЛЕННЫЙ КАЛЕНДАРЬ
+        // КАЛЕНДАРЬ
         function openCalendarModal() {
             tg.HapticFeedback.impactOccurred('light');
             const grid = document.getElementById('calendar-grid');
@@ -547,17 +637,13 @@
             
             for(let d=1; d<=daysInMonth; d++) {
                 const cellDate = new Date(year, month, d);
-                const localDateStr = getLocalDateString(cellDate); // Жесткая привязка к местной дате
+                const localDateStr = getLocalDateString(cellDate);
                 const isToday = (localDateStr === getLocalDateString(now)) ? 'today' : '';
                 
-                // Фильтруем события именно по местной дате
                 const dayEvents = allEventsCache.filter(e => getLocalDateString(new Date(e.event_date)) === localDateStr);
                 
                 let dotsHtml = '<div class="cal-dots">';
-                // Без жестких ограничений, flex-wrap распределит точки
-                dayEvents.slice(0, 10).forEach(e => { 
-                    dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; 
-                });
+                dayEvents.slice(0, 10).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
                 dotsHtml += '</div>';
 
                 html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${localDateStr}')">${d}${dotsHtml}</div>`;
@@ -571,14 +657,11 @@
         function scrollToDate(dateStr) {
             closeAllModals();
             const page = document.getElementById(`page-${dateStr}`);
-            if (page) {
-                page.scrollIntoView({ behavior: 'smooth' });
-                tg.HapticFeedback.selectionChanged();
-            } else {
-                tg.showAlert('На эту дату нет дел.');
-            }
+            if (page) { page.scrollIntoView({ behavior: 'smooth' }); tg.HapticFeedback.selectionChanged(); }
+            else tg.showAlert('На эту дату нет дел.');
         }
 
+        // СТАТИСТИКА
         function openStatsModal() {
             tg.HapticFeedback.impactOccurred('light');
             const now = new Date();
