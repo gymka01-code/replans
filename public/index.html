@@ -17,17 +17,33 @@
             --accent-color: var(--tg-theme-button-color, #007AFF);
             --accent-text: var(--tg-theme-button-text-color, #FFFFFF);
             --hint-color: var(--tg-theme-hint-color, #8E8E93);
-            
             --blue: #007AFF; --red: #FF3B30; --green: #34C759; --orange: #FF9500; --purple: #AF52DE; --gray: #8E8E93;
         }
 
         @supports (font: -apple-system-body) { body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; } }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; overflow-x: hidden; }
+        
+        /* Чёрный фон для глубины iOS */
+        body { background: #000000; color: var(--text-color); margin: 0; overscroll-behavior-y: none; overflow-x: hidden; }
 
-        .header-container { position: fixed; top: 0; left: 0; width: 100%; background: rgba(242, 242, 247, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; padding: 20px 20px 12px; border-bottom: 0.5px solid rgba(0, 0, 0, 0.05); }
+        /* Обертка всего приложения для 3D Apple-эффекта */
+        #app-wrap {
+            background: var(--bg-color);
+            min-height: 100vh;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.4s, opacity 0.4s;
+            position: relative;
+            z-index: 1;
+        }
+        body.modal-open #app-wrap {
+            transform: scale(0.93) translateY(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            opacity: 0.7;
+        }
+
+        /* Шапка */
+        .header-container { position: fixed; top: 0; left: 0; width: 100%; background: rgba(242, 242, 247, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; padding: 20px 20px 12px; border-bottom: 0.5px solid rgba(0, 0, 0, 0.05); transition: opacity 0.3s;}
         @media (prefers-color-scheme: dark) { .header-container { background: rgba(0, 0, 0, 0.65); border-bottom: 0.5px solid rgba(255, 255, 255, 0.1); } }
-
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
         .header h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;}
         .header-actions { display: flex; gap: 8px; }
@@ -35,23 +51,40 @@
         .icon-btn { background: rgba(118, 118, 128, 0.12); color: var(--text-color); border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 16px;}
         .icon-btn:active { transform: scale(0.85); }
         .icon-btn.primary { background: var(--accent-color); color: var(--accent-text); box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);}
-
         .filter-select { width: 100%; padding: 8px 12px; border-radius: 10px; border: none; background: rgba(118, 118, 128, 0.12); color: var(--text-color); font-size: 15px; font-weight: 500; outline: none; appearance: none; text-align: center;}
 
+        /* Слайдер и страницы */
         .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding-top: 130px; padding-bottom: 100px; min-height: 100vh; }
         .slider-container::-webkit-scrollbar { display: none; }
         .day-page { min-width: 100vw; scroll-snap-align: center; padding: 0 20px; }
         .day-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
         .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; font-weight: 500; }
 
-        .event-card { position: relative; background: var(--card-bg); border-radius: 20px; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 14px rgba(0,0,0,0.03); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); user-select: none; border: 2px solid transparent; overflow: hidden;}
-        .event-card:active { transform: scale(0.97); }
+        /* iOS Свайп влево */
+        .swipe-wrapper { position: relative; border-radius: 12px; margin-bottom: 12px; background: var(--red); overflow: hidden; touch-action: pan-y; }
+        .swipe-action-btn { position: absolute; right: 0; top: 0; bottom: 0; width: 90px; background: var(--red); color: white; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; opacity: 0; }
+        
+        .event-card { position: relative; background: var(--card-bg); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; z-index: 2; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); width: 100%; user-select: none; border: 2px solid transparent;}
+        .event-card.swiped { transform: translateX(-80px); }
         .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
         
+        /* Haptic Touch (iOS Меню) */
+        .haptic-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.1); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 999; }
+        .haptic-overlay.active { opacity: 1; visibility: visible; }
+        .event-card.haptic-active { z-index: 1000 !important; transform: scale(1.03) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; transition: 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important; }
+        
+        .ios-context-menu { position: absolute; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 14px; width: 220px; z-index: 1000; opacity: 0; transform: scale(0.9); transition: 0.2s cubic-bezier(0.25, 1, 0.5, 1); pointer-events: none; display: flex; flex-direction: column; overflow: hidden; }
+        @media (prefers-color-scheme: dark) { .ios-context-menu { background: rgba(30, 30, 30, 0.85); } }
+        .ios-context-menu.active { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .ios-menu-item { padding: 12px 16px; font-size: 16px; color: var(--text-color); border-bottom: 0.5px solid rgba(128,128,128,0.2); display: flex; justify-content: space-between; font-weight: 500; cursor: pointer;}
+        .ios-menu-item:last-child { border-bottom: none; color: var(--red); }
+        .ios-menu-item:active { background: rgba(128,128,128,0.1); }
+
+        /* Внутренности карточки */
         .event-card-inner { display: flex; align-items: flex-start; width: 100%; padding-left: 10px; gap: 12px;}
         .event-content { flex-grow: 1; pointer-events: none; transition: 0.3s; width: 100%;} 
         
-        .complete-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--hint-color); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.2s; margin-top: 2px;}
+        .complete-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--hint-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; margin-top: 2px; pointer-events: auto;}
         .complete-checkbox.done { background: var(--accent-color); border-color: var(--accent-color); }
         .complete-checkbox.done::after { content: ""; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
         
@@ -63,17 +96,16 @@
         
         .subtasks-list { margin-top: 12px; pointer-events: auto; }
         .subtask-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; color: var(--text-color); cursor: pointer;}
-        .subtask-item:active { opacity: 0.5; }
         .subtask-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--hint-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;}
         .subtask-check.done { background: var(--gray); border-color: var(--gray); }
         .subtask-check.done::after { content: ""; width: 4px; height: 8px; border: solid white; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-bottom: 1px; }
-        .subtask-text { transition: 0.2s; }
         .subtask-text.done { text-decoration: line-through; color: var(--hint-color); }
 
         .event-card.is-completed { opacity: 0.6; box-shadow: none; background: rgba(118, 118, 128, 0.05);}
         .event-card.is-completed .event-title { text-decoration: line-through; color: var(--hint-color); }
         .event-card.is-completed .color-strip { background: var(--gray) !important; }
 
+        /* Выделение */
         .checkbox-circle { position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hint-color); opacity: 0; transition: 0.3s; pointer-events: none; display: flex; align-items: center; justify-content: center;}
         body.select-mode .checkbox-circle { left: 16px; opacity: 1; }
         body.select-mode .event-card-inner { transform: translateX(35px); pointer-events: none;}
@@ -88,15 +120,21 @@
         .text-btn { background: rgba(118, 118, 128, 0.12); border: none; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-color); cursor: pointer;}
         .text-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--red); }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
+        /* Модальные окна Apple-Style */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); opacity: 0; visibility: hidden; transition: 0.4s; z-index: 99; }
         .overlay.active { opacity: 1; visibility: visible; }
-        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px; transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; }
+        
+        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--bg-color); border-radius: 30px 30px 0 0; padding: 25px 20px 20px; transition: 0.4s cubic-bezier(0.25, 1, 0.5, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.15); overflow-y: auto; }
         .modal.active { bottom: 0; }
+        
+        /* Drag indicator для модалок */
+        .modal::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 36px; height: 5px; background: var(--hint-color); border-radius: 5px; opacity: 0.5; }
         
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
         .close-btn { background: rgba(118, 118, 128, 0.12); border: none; color: var(--text-color); font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 12px; }
 
+        /* Элементы форм (без изменений) */
         .presets-scroll { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
         .presets-scroll::-webkit-scrollbar { display: none; }
         .preset-chip { padding: 8px 14px; background: var(--card-bg); border-radius: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; cursor: pointer;}
@@ -121,7 +159,7 @@
         
         .subtasks-builder { display: none; padding-top: 10px; padding-bottom: 10px;}
         .st-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .st-input-row input { flex-grow: 1; padding: 12px 14px; border-radius: 12px; border: none; background: rgba(118,118,128,0.08); color: var(--text-color); font-size: 16px; outline: none;}
+        .st-input-row input { flex-grow: 1; padding: 12px 14px; border-radius: 12px; border: none; background: rgba(118,118,128,0.08); outline: none;}
         .st-del-btn { background: rgba(255, 59, 48, 0.1); color: var(--red); width: 32px; height: 32px; border-radius: 50%; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer;}
         .add-st-btn { background: transparent; color: var(--accent-color); border: none; font-size: 16px; font-weight: 500; padding: 10px 0; cursor: pointer;}
 
@@ -140,41 +178,55 @@
         .cal-day.today { color: var(--accent-color); font-weight: 700; background: rgba(0, 122, 255, 0.1); }
         .cal-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; position: absolute; bottom: 4px; left: 2px; right: 2px; max-width: 100%; }
         .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
-
+        
         .stat-item { display: flex; justify-content: space-between; padding: 14px 16px; background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; font-size: 16px; font-weight: 500;}
         .stat-val { font-weight: 700; color: var(--accent-color); }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <div class="header">
-            <h1>Ежедневник</h1>
-            <div class="header-actions">
-                <button class="icon-btn" onclick="exportCalendar()" title="Добавить в Apple/Google Календарь">↗️</button>
-                <button class="icon-btn" onclick="openStatsModal()">📊</button>
-                <button class="icon-btn" onclick="openCalendarModal()">📅</button>
-                <button class="icon-btn primary" onclick="openModal()">+</button>
+    <!-- Главная обертка для Apple-глубины -->
+    <div id="app-wrap">
+        <div class="header-container" id="header">
+            <div class="header">
+                <h1>Ежедневник</h1>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="exportCalendar()" title="Экспорт">↗️</button>
+                    <button class="icon-btn" onclick="openStatsModal()">📊</button>
+                    <button class="icon-btn" onclick="openCalendarModal()">📅</button>
+                    <button class="icon-btn primary" onclick="openModal()">+</button>
+                </div>
+            </div>
+            <select id="event-filter" class="filter-select" onchange="onFilterChange()">
+                <option value="ALL">Все типы дел ▾</option>
+            </select>
+        </div>
+
+        <div class="slider-container" id="slider-container"></div>
+
+        <div id="bulk-action-bar" class="bulk-action-bar">
+            <span id="bulk-count" style="font-weight:600; font-size:16px;">Выбрано: 0</span>
+            <div style="display:flex; gap:8px;">
+                <button class="text-btn" onclick="selectAllFiltered()">Все</button>
+                <button class="text-btn danger" onclick="deleteSelected()">Удалить</button>
+                <button class="text-btn" onclick="toggleSelectMode(false)">Отмена</button>
             </div>
         </div>
-        <select id="event-filter" class="filter-select" onchange="onFilterChange()">
-            <option value="ALL">Все типы дел ▾</option>
-        </select>
-    </div>
+    </div> <!-- Конец app-wrap -->
 
-    <div class="slider-container" id="slider-container"></div>
-
-    <div id="bulk-action-bar" class="bulk-action-bar">
-        <span id="bulk-count" style="font-weight:600; font-size:16px;">Выбрано: 0</span>
-        <div style="display:flex; gap:8px;">
-            <button class="text-btn" onclick="selectAllFiltered()">Все</button>
-            <button class="text-btn danger" onclick="deleteSelected()">Удалить</button>
-            <button class="text-btn" onclick="toggleSelectMode(false)">Отмена</button>
-        </div>
-    </div>
-
+    <!-- Модалки и оверлеи -->
     <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
+    <!-- Haptic Touch Элементы -->
+    <div class="haptic-overlay" id="haptic-overlay" onclick="closeHapticMenu()"></div>
+    <div class="ios-context-menu" id="ios-menu">
+        <div class="ios-menu-item" onclick="toggleSelectionFromMenu()">Выбрать <span>☑️</span></div>
+        <div class="ios-menu-item" onclick="duplicateEvent()">Копировать <span>📄</span></div>
+        <div class="ios-menu-item" onclick="moveTomorrow()">На завтра <span>➡️</span></div>
+        <div class="ios-menu-item" onclick="deleteFromMenu()">Удалить <span>🗑</span></div>
+    </div>
+
+    <!-- Модалка Статистики -->
     <div class="modal" id="stats-modal">
         <div class="modal-header">
             <h2 id="stats-title">Статистика</h2>
@@ -183,6 +235,7 @@
         <div id="stats-content"></div>
     </div>
 
+    <!-- Модалка Календаря -->
     <div class="modal" id="calendar-modal">
         <div class="modal-header">
             <h2 id="month-title">Календарь</h2>
@@ -191,6 +244,7 @@
         <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
+    <!-- Модалка Добавления Дела -->
     <div class="modal" id="modal">
         <div class="modal-header">
             <h2 id="modal-title">Новое дело</h2>
@@ -263,6 +317,7 @@
         if(tg.colorScheme === 'dark') {
             document.documentElement.style.setProperty('--bg-color', '#000000');
             document.documentElement.style.setProperty('--card-bg', '#1C1C1E');
+            document.body.style.background = '#000000';
         }
 
         const userId = tg.initDataUnsafe?.user?.id || '123456789';
@@ -275,8 +330,6 @@
         let currentFilter = 'ALL';
         let isSelectMode = false;
         let selectedIds = new Set();
-        let pressTimer, isLongPress = false;
-        let startX = 0, startY = 0;
 
         function getLocalDateString(date) {
             return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
@@ -293,20 +346,12 @@
             }));
         });
 
-        // ИСПРАВЛЕННЫЙ ЭКСПОРТ ЧЕРЕЗ БОТА
         async function exportCalendar() {
             tg.HapticFeedback.impactOccurred('heavy');
             tg.showAlert('Календарь сейчас придет тебе в личные сообщения от бота!');
-            try {
-                await fetch('/api/export', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ userId }) 
-                });
-            } catch (e) { console.error("Ошибка экспорта", e); }
+            try { await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }); } catch (e) {}
         }
 
-        // АВТОПОДСТРОЙКА КОНЦА ВРЕМЕНИ (+1 ЧАС)
         function autoAdjustEnd() {
             const startVal = document.getElementById('time-picker').value;
             if (startVal) {
@@ -331,22 +376,18 @@
             div.className = 'st-input-row';
             div.id = `st-row-${id}`;
             div.dataset.done = isDone;
-            div.innerHTML = `<input type="text" placeholder="Пункт (например, Молоко)" value="${escapeHtml(val)}"><button class="st-del-btn" onclick="removeSubtaskInput('${id}')">−</button>`;
+            div.innerHTML = `<input type="text" placeholder="Пункт" value="${escapeHtml(val)}"><button class="st-del-btn" onclick="removeSubtaskInput('${id}')">−</button>`;
             list.appendChild(div);
         }
 
-        function removeSubtaskInput(id) {
-            const row = document.getElementById(`st-row-${id}`);
-            if (row) row.remove();
-        }
+        function removeSubtaskInput(id) { document.getElementById(`st-row-${id}`)?.remove(); }
 
         function getSubtasksFromBuilder() {
             if (!document.getElementById('st-toggle').checked) return [];
             const subtasks = [];
             document.querySelectorAll('.st-input-row').forEach(row => {
                 const val = row.querySelector('input').value.trim();
-                const isDone = row.dataset.done === 'true';
-                if (val) subtasks.push({ title: val, isDone: isDone });
+                if (val) subtasks.push({ title: val, isDone: row.dataset.done === 'true' });
             });
             return subtasks;
         }
@@ -382,10 +423,7 @@
             } catch (e) { console.error(e); }
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
+        function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : ''; }
 
         function updateFilterOptions() {
             const select = document.getElementById('event-filter');
@@ -396,22 +434,15 @@
             select.value = currentFilter;
         }
 
-        function onFilterChange() {
-            currentFilter = document.getElementById('event-filter').value;
-            if (isSelectMode) toggleSelectMode(false);
-            renderEvents();
-        }
+        function onFilterChange() { currentFilter = document.getElementById('event-filter').value; renderEvents(); }
 
         function formatDayTitle(dateString) {
             const [y, m, d] = dateString.split('-');
             const targetDate = new Date(y, m - 1, d);
             const today = new Date();
             const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            const tdStr = getLocalDateString(today);
-            const tmStr = getLocalDateString(tomorrow);
-            
-            if (dateString === tdStr) return `Сегодня, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
-            if (dateString === tmStr) return `Завтра, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
+            if (dateString === getLocalDateString(today)) return `Сегодня, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
+            if (dateString === getLocalDateString(tomorrow)) return `Завтра, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
             return `${days[targetDate.getDay()]}, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
         }
 
@@ -426,8 +457,7 @@
 
             const groupedEvents = {};
             filteredEvents.forEach(ev => {
-                const d = new Date(ev.event_date);
-                const dateKey = getLocalDateString(d); 
+                const dateKey = getLocalDateString(new Date(ev.event_date)); 
                 if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
                 groupedEvents[dateKey].push(ev);
             });
@@ -435,7 +465,6 @@
             slider.innerHTML = '';
             Object.keys(groupedEvents).sort().forEach((dateKey) => {
                 let pageHTML = `<div class="day-page" id="page-${dateKey}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
-                
                 groupedEvents[dateKey].sort((a, b) => {
                     if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
                     if (a.is_all_day && !b.is_all_day) return -1;
@@ -444,12 +473,8 @@
                 });
                     
                 groupedEvents[dateKey].forEach(ev => {
-                    let timeHTML = `<span class="event-time all-day">Весь день</span>`;
-                    if (!ev.is_all_day) {
-                        const start = new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                        const end = ev.end_date ? ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : '';
-                        timeHTML = `<span class="event-time">${start}${end}</span>`;
-                    }
+                    let timeHTML = ev.is_all_day ? `<span class="event-time all-day">Весь день</span>` : 
+                        `<span class="event-time">${new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}${ev.end_date ? ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : ''}</span>`;
                     
                     const isSel = selectedIds.has(ev.id) ? 'selected' : '';
                     const isDone = ev.is_completed ? 'is-completed' : '';
@@ -460,31 +485,31 @@
                         subtasksHtml = `<div class="subtasks-list">`;
                         ev.subtasks.forEach((st, idx) => {
                             const stClass = st.isDone ? 'done' : '';
-                            subtasksHtml += `
-                                <div class="subtask-item" onclick="toggleSubtask(event, ${ev.id}, ${idx}, ${!st.isDone})">
-                                    <div class="subtask-check ${stClass}"></div>
-                                    <div class="subtask-text ${stClass}">${escapeHtml(st.title)}</div>
-                                </div>
-                            `;
+                            subtasksHtml += `<div class="subtask-item" onclick="toggleSubtask(event, ${ev.id}, ${idx}, ${!st.isDone})"><div class="subtask-check ${stClass}"></div><div class="subtask-text ${stClass}">${escapeHtml(st.title)}</div></div>`;
                         });
                         subtasksHtml += `</div>`;
                     }
 
+                    // iOS Wrapper
                     pageHTML += `
-                        <div class="event-card ${isSel} ${isDone}" id="card-${ev.id}"
-                             ontouchstart="handleTouchStart(event, ${ev.id})" ontouchend="handleTouchEnd(event)" ontouchmove="handleTouchMove(event)"
-                             onmousedown="handleTouchStart(event, ${ev.id})" onmouseup="handleTouchEnd(event)" onmouseleave="handleTouchEnd(event)"
-                             onclick="handleCardClick(event, ${ev.id})">
-                             
-                            <div class="checkbox-circle" id="check-${ev.id}"></div>
-                            <div class="color-strip" style="background: var(--${ev.color || 'blue'})"></div>
-                            
-                            <div class="event-card-inner">
-                                <div class="complete-checkbox ${checkClass}" onclick="toggleComplete(event, ${ev.id}, ${!ev.is_completed})"></div>
-                                <div class="event-content">
-                                    <div class="event-header"><span class="event-title">${escapeHtml(ev.title)}</span>${timeHTML}</div>
-                                    ${ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : ''}
-                                    ${subtasksHtml}
+                        <div class="swipe-wrapper" id="wrapper-${ev.id}">
+                            <div class="swipe-action-btn" onclick="deleteSingleEvent(${ev.id})">Удалить</div>
+                            <div class="event-card ${isSel} ${isDone}" id="card-${ev.id}"
+                                 ontouchstart="handleTouchStartLogic(event, ${ev.id})"
+                                 ontouchmove="handleSwipeMove(event, ${ev.id})"
+                                 ontouchend="handleSwipeEnd(event, ${ev.id})"
+                                 onclick="handleCardClick(event, ${ev.id})">
+                                 
+                                <div class="checkbox-circle" id="check-${ev.id}"></div>
+                                <div class="color-strip" style="background: var(--${ev.color || 'blue'})"></div>
+                                
+                                <div class="event-card-inner">
+                                    <div class="complete-checkbox ${checkClass}" onclick="toggleComplete(event, ${ev.id}, ${!ev.is_completed})"></div>
+                                    <div class="event-content">
+                                        <div class="event-header"><span class="event-title">${escapeHtml(ev.title)}</span>${timeHTML}</div>
+                                        ${ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : ''}
+                                        ${subtasksHtml}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -515,35 +540,157 @@
             }
         }
 
-        window.handleTouchStart = function(e, id) {
+        /* МАГИЯ APPLE UI (Свайпы + Haptic Touch) */
+        let swipeStartX = 0, swipeCurrentX = 0, swipeStartY = 0, swipeCurrentY = 0;
+        let swipedCardId = null;
+        let hapticTimer = null;
+        let hapticTargetId = null;
+        let isScrolling = false;
+
+        window.handleTouchStartLogic = function(e, id) {
             if (isSelectMode) return;
-            if (e.touches) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
-            isLongPress = false;
-            pressTimer = setTimeout(() => {
-                isLongPress = true; tg.HapticFeedback.impactOccurred('heavy');
-                toggleSelectMode(true); toggleSelection(id);
-            }, 500);
-        };
-        window.handleTouchMove = function(e) { if (e.touches && (Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10)) clearTimeout(pressTimer); };
-        window.handleTouchEnd = function(e) { clearTimeout(pressTimer); };
-        
-        window.handleCardClick = function(e, id) {
-            if (isLongPress) { isLongPress = false; return; }
-            if (isSelectMode) toggleSelection(id);
-            else openModal(id);
+            if (swipedCardId && swipedCardId !== id) {
+                document.getElementById(`card-${swipedCardId}`).style.transform = 'translateX(0px)';
+                document.getElementById(`card-${swipedCardId}`).classList.remove('swiped');
+                swipedCardId = null;
+            }
+            swipeStartX = e.touches[0].clientX;
+            swipeStartY = e.touches[0].clientY;
+            isScrolling = false;
+            
+            const card = document.getElementById(`card-${id}`);
+            card.style.transition = 'none';
+
+            hapticTimer = setTimeout(() => {
+                if (!isScrolling && Math.abs(swipeCurrentX - swipeStartX) < 10) { activateHapticMenu(e, id); }
+            }, 400); 
         };
 
+        window.handleSwipeMove = function(e, id) {
+            if (isSelectMode || hapticTargetId) return;
+            swipeCurrentX = e.touches[0].clientX;
+            swipeCurrentY = e.touches[0].clientY;
+
+            if (Math.abs(swipeCurrentY - swipeStartY) > 10) { isScrolling = true; clearTimeout(hapticTimer); return; }
+            if (Math.abs(swipeCurrentX - swipeStartX) > 10) clearTimeout(hapticTimer);
+
+            let diff = swipeCurrentX - swipeStartX;
+            if (diff < 0) { 
+                const card = document.getElementById(`card-${id}`);
+                const btn = document.getElementById(`wrapper-${id}`).querySelector('.swipe-action-btn');
+                let transformX = Math.max(diff, -100);
+                card.style.transform = `translateX(${transformX}px)`;
+                btn.style.opacity = Math.abs(transformX) / 80;
+            }
+        };
+
+        window.handleSwipeEnd = function(e, id) {
+            if (isSelectMode || hapticTargetId) return;
+            clearTimeout(hapticTimer);
+            
+            const card = document.getElementById(`card-${id}`);
+            card.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            
+            let diff = swipeCurrentX === 0 ? 0 : swipeCurrentX - swipeStartX;
+            if (diff < -50) {
+                card.style.transform = ''; 
+                card.classList.add('swiped');
+                swipedCardId = id;
+                tg.HapticFeedback.impactOccurred('light');
+            } else {
+                card.style.transform = 'translateX(0px)';
+                card.classList.remove('swiped');
+                if (swipedCardId === id) swipedCardId = null;
+            }
+            swipeCurrentX = 0; swipeCurrentY = 0;
+        };
+
+        window.handleCardClick = function(e, id) {
+            if (isSelectMode) return toggleSelection(id);
+            if (hapticTargetId === id) return;
+            if (swipedCardId === id) {
+                const card = document.getElementById(`card-${id}`);
+                card.style.transform = 'translateX(0px)';
+                card.classList.remove('swiped');
+                swipedCardId = null;
+                return;
+            }
+            openModal(id);
+        };
+
+        /* Haptic Menu Logic */
+        function activateHapticMenu(e, id) {
+            tg.HapticFeedback.impactOccurred('heavy');
+            hapticTargetId = id;
+            
+            const card = document.getElementById(`card-${id}`);
+            const rect = card.getBoundingClientRect();
+            
+            document.getElementById('haptic-overlay').classList.add('active');
+            card.classList.add('haptic-active');
+            
+            const menu = document.getElementById('ios-menu');
+            let topPos = rect.bottom + 10;
+            if(topPos + 200 > window.innerHeight) topPos = rect.top - 210; // Если не влезает вниз
+            
+            menu.style.top = `${topPos}px`;
+            menu.style.left = `${Math.max(10, rect.left)}px`;
+            menu.classList.add('active');
+        }
+
+        window.closeHapticMenu = function() {
+            document.getElementById('haptic-overlay').classList.remove('active');
+            document.getElementById('ios-menu').classList.remove('active');
+            if (hapticTargetId) {
+                document.getElementById(`card-${hapticTargetId}`).classList.remove('haptic-active');
+                hapticTargetId = null;
+            }
+        };
+
+        window.deleteFromMenu = function() { deleteSingleEvent(hapticTargetId); closeHapticMenu(); };
+        window.toggleSelectionFromMenu = function() { toggleSelectMode(true); toggleSelection(hapticTargetId); closeHapticMenu(); };
+        
+        window.duplicateEvent = async function() {
+            if(!hapticTargetId) return;
+            tg.HapticFeedback.impactOccurred('medium');
+            const ev = allEventsCache.find(e => e.id === hapticTargetId);
+            closeHapticMenu();
+            const payload = { userId, title: ev.title + ' (Копия)', dates: [ev.event_date], endDates: [ev.end_date], notifyPrefs: ev.notify_prefs || [], comment: ev.comment, isAllDay: ev.is_all_day, color: ev.color, subtasks: ev.subtasks };
+            await fetch('/api/events', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            loadEvents();
+        };
+
+        window.moveTomorrow = async function() {
+            if(!hapticTargetId) return;
+            tg.HapticFeedback.notificationOccurred('success');
+            const ev = allEventsCache.find(e => e.id === hapticTargetId);
+            closeHapticMenu();
+            let newDate = new Date(ev.event_date); newDate.setDate(newDate.getDate() + 1);
+            let newEndDate = ev.end_date ? new Date(ev.end_date) : null; if(newEndDate) newEndDate.setDate(newEndDate.getDate() + 1);
+            const payload = { title: ev.title, date: newDate.toISOString(), endDate: newEndDate ? newEndDate.toISOString() : null, notifyPrefs: ev.notify_prefs || [], comment: ev.comment, isAllDay: ev.is_all_day, color: ev.color, subtasks: ev.subtasks };
+            await fetch(`/api/events/${ev.id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            loadEvents();
+        };
+
+        window.deleteSingleEvent = async function(id) {
+            tg.HapticFeedback.impactOccurred('heavy');
+            await fetch(`/api/events/${id}`, { method: 'DELETE' });
+            swipedCardId = null;
+            loadEvents();
+        };
+
+        /* Селекция и Управление */
         function toggleSelectMode(force) {
             isSelectMode = force !== undefined ? force : !isSelectMode;
             document.body.classList.toggle('select-mode', isSelectMode);
             document.getElementById('bulk-action-bar').classList.toggle('active', isSelectMode);
-            if (!isSelectMode) { selectedIds.clear(); isLongPress = false; renderEvents(); }
+            if (!isSelectMode) { selectedIds.clear(); renderEvents(); }
         }
 
         function toggleSelection(id) {
-            if (selectedIds.has(id)) { selectedIds.delete(id); document.getElementById(`card-${id}`).classList.remove('selected'); }
-            else { selectedIds.add(id); document.getElementById(`card-${id}`).classList.add('selected'); }
+            if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
             document.getElementById('bulk-count').textContent = `Выбрано: ${selectedIds.size}`;
+            renderEvents(); // Обновит классы
         }
 
         function selectAllFiltered() {
@@ -565,69 +712,53 @@
             });
         }
 
+        /* Apple Modal Logic */
         function closeAllModals() {
             document.getElementById('overlay').classList.remove('active');
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            document.body.classList.remove('modal-open');
+            document.getElementById('header').style.opacity = '1';
+            
             datePickerInstance.clear();
-            document.getElementById('title').value = '';
-            document.getElementById('comment').value = '';
-            document.getElementById('st-toggle').checked = false;
-            document.getElementById('subtasks-builder').style.display = 'none';
-            document.getElementById('st-list').innerHTML = '';
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            selectedPrefs = [];
-            editingEventId = null;
+            document.getElementById('title').value = ''; document.getElementById('comment').value = '';
+            document.getElementById('st-toggle').checked = false; document.getElementById('subtasks-builder').style.display = 'none';
+            document.getElementById('st-list').innerHTML = ''; document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            selectedPrefs = []; editingEventId = null;
         }
 
         function openModal(id = null) {
             tg.HapticFeedback.impactOccurred('medium');
+            document.body.classList.add('modal-open');
+            document.getElementById('header').style.opacity = '0';
+            
             editingEventId = id;
             if (id !== null) {
                 const ev = allEventsCache.find(e => e.id === id);
-                document.getElementById('modal-title').textContent = 'Редактировать';
-                document.getElementById('save-btn').textContent = 'Сохранить';
-                document.getElementById('title').value = ev.title;
-                document.getElementById('comment').value = ev.comment || '';
+                document.getElementById('modal-title').textContent = 'Редактировать'; document.getElementById('save-btn').textContent = 'Сохранить';
+                document.getElementById('title').value = ev.title; document.getElementById('comment').value = ev.comment || '';
                 selectColor(ev.color || 'blue');
-                
-                const list = document.getElementById('st-list');
-                list.innerHTML = '';
+                const list = document.getElementById('st-list'); list.innerHTML = '';
                 if (ev.subtasks && ev.subtasks.length > 0) {
-                    document.getElementById('st-toggle').checked = true;
-                    document.getElementById('subtasks-builder').style.display = 'block';
+                    document.getElementById('st-toggle').checked = true; document.getElementById('subtasks-builder').style.display = 'block';
                     ev.subtasks.forEach(st => addSubtaskInput(st.title, st.isDone));
                 }
-                
                 const d = new Date(ev.event_date);
-                datePickerInstance.set('mode', 'single');
-                datePickerInstance.setDate(getLocalDateString(d));
-                document.getElementById('all-day-toggle').checked = ev.is_all_day;
-                toggleTime();
-                
+                datePickerInstance.set('mode', 'single'); datePickerInstance.setDate(getLocalDateString(d));
+                document.getElementById('all-day-toggle').checked = ev.is_all_day; toggleTime();
                 if (!ev.is_all_day) {
                     document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
                     if (ev.end_date) {
-                        const endD = new Date(ev.end_date);
-                        document.getElementById('time-picker-end').value = String(endD.getHours()).padStart(2, '0') + ":" + String(endD.getMinutes()).padStart(2, '0');
-                    } else {
-                        autoAdjustEnd();
-                    }
+                        const endD = new Date(ev.end_date); document.getElementById('time-picker-end').value = String(endD.getHours()).padStart(2, '0') + ":" + String(endD.getMinutes()).padStart(2, '0');
+                    } else autoAdjustEnd();
                 }
-                
                 selectedPrefs = ev.notify_prefs || [];
                 document.querySelectorAll('.chip').forEach(chip => { if(selectedPrefs.includes(parseInt(chip.dataset.val))) chip.classList.add('active'); });
             } else {
-                document.getElementById('modal-title').textContent = 'Новое дело';
-                document.getElementById('save-btn').textContent = 'Добавить';
-                datePickerInstance.set('mode', 'multiple');
-                selectColor('blue');
-                document.getElementById('all-day-toggle').checked = false;
-                document.getElementById('time-picker').value = "09:00";
-                document.getElementById('time-picker-end').value = "10:00";
-                toggleTime();
+                document.getElementById('modal-title').textContent = 'Новое дело'; document.getElementById('save-btn').textContent = 'Добавить';
+                datePickerInstance.set('mode', 'multiple'); selectColor('blue');
+                document.getElementById('all-day-toggle').checked = false; document.getElementById('time-picker').value = "09:00"; document.getElementById('time-picker-end').value = "10:00"; toggleTime();
             }
-            document.getElementById('overlay').classList.add('active');
-            document.getElementById('modal').classList.add('active');
+            document.getElementById('overlay').classList.add('active'); document.getElementById('modal').classList.add('active');
         }
 
         async function saveEvent() {
@@ -643,29 +774,17 @@
 
             const [h, m] = isAllDay ? [0, 0] : timeVal.split(':');
             const [eh, em] = isAllDay ? [0, 0] : timeEndVal.split(':');
-            
             const basePayload = { title, notifyPrefs: selectedPrefs, comment: document.getElementById('comment').value, isAllDay, color: selectedColor, subtasks };
 
             if (editingEventId !== null) {
                 const d = new Date(dates[0]); d.setHours(parseInt(h), parseInt(m), 0, 0);
-                let ed = null;
-                if (!isAllDay) {
-                    ed = new Date(dates[0]); ed.setHours(parseInt(eh), parseInt(em), 0, 0);
-                }
+                let ed = null; if (!isAllDay) { ed = new Date(dates[0]); ed.setHours(parseInt(eh), parseInt(em), 0, 0); }
                 await fetch(`/api/events/${editingEventId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, date: d.toISOString(), endDate: ed ? ed.toISOString() : null }) });
             } else {
-                const finalDates = [];
-                const finalEndDates = [];
+                const finalDates = []; const finalEndDates = [];
                 dates.forEach(d => {
-                    const dt = new Date(d); dt.setHours(parseInt(h), parseInt(m), 0, 0);
-                    finalDates.push(dt.toISOString());
-                    
-                    if (!isAllDay) {
-                        const edt = new Date(d); edt.setHours(parseInt(eh), parseInt(em), 0, 0);
-                        finalEndDates.push(edt.toISOString());
-                    } else {
-                        finalEndDates.push(null);
-                    }
+                    const dt = new Date(d); dt.setHours(parseInt(h), parseInt(m), 0, 0); finalDates.push(dt.toISOString());
+                    if (!isAllDay) { const edt = new Date(d); edt.setHours(parseInt(eh), parseInt(em), 0, 0); finalEndDates.push(edt.toISOString()); } else { finalEndDates.push(null); }
                 });
                 await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, userId, dates: finalDates, endDates: finalEndDates }) });
             }
@@ -673,65 +792,8 @@
             closeAllModals(); loadEvents();
         }
 
-        function openCalendarModal() {
-            tg.HapticFeedback.impactOccurred('light');
-            const grid = document.getElementById('calendar-grid');
-            const now = new Date();
-            const year = now.getFullYear(), month = now.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDay = new Date(year, month, 1).getDay();
-            const shift = firstDay === 0 ? 6 : firstDay - 1; 
-            
-            document.getElementById('month-title').textContent = `${["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"][month]} ${year}`;
-            
-            let html = '<div class="cal-header">Пн</div><div class="cal-header">Вт</div><div class="cal-header">Ср</div><div class="cal-header">Чт</div><div class="cal-header">Пт</div><div class="cal-header">Сб</div><div class="cal-header">Вс</div>';
-            for(let i=0; i<shift; i++) html += `<div class="cal-day empty"></div>`;
-            
-            for(let d=1; d<=daysInMonth; d++) {
-                const cellDate = new Date(year, month, d);
-                const localDateStr = getLocalDateString(cellDate);
-                const isToday = (localDateStr === getLocalDateString(now)) ? 'today' : '';
-                
-                const dayEvents = allEventsCache.filter(e => getLocalDateString(new Date(e.event_date)) === localDateStr);
-                
-                let dotsHtml = '<div class="cal-dots">';
-                dayEvents.slice(0, 10).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
-                dotsHtml += '</div>';
-
-                html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${localDateStr}')">${d}${dotsHtml}</div>`;
-            }
-            grid.innerHTML = html;
-            
-            document.getElementById('overlay').classList.add('active');
-            document.getElementById('calendar-modal').classList.add('active');
-        }
-
-        function scrollToDate(dateStr) {
-            closeAllModals();
-            const page = document.getElementById(`page-${dateStr}`);
-            if (page) { page.scrollIntoView({ behavior: 'smooth' }); tg.HapticFeedback.selectionChanged(); }
-            else tg.showAlert('На эту дату нет дел.');
-        }
-
-        function openStatsModal() {
-            tg.HapticFeedback.impactOccurred('light');
-            const now = new Date();
-            const currentMonthEvents = allEventsCache.filter(e => new Date(e.event_date).getMonth() === now.getMonth());
-            
-            const stats = {};
-            currentMonthEvents.forEach(e => { stats[e.title] = (stats[e.title] || 0) + 1; });
-
-            let html = `<p style="color:var(--hint-color); margin-top:0;">В этом месяце запланировано:</p>`;
-            if (Object.keys(stats).length === 0) html += `<div class="empty-state">Нет данных</div>`;
-            
-            Object.entries(stats).sort((a,b) => b[1]-a[1]).forEach(([title, count]) => {
-                html += `<div class="stat-item"><span>${title}</span> <span class="stat-val">${count}</span></div>`;
-            });
-            
-            document.getElementById('stats-content').innerHTML = html;
-            document.getElementById('overlay').classList.add('active');
-            document.getElementById('stats-modal').classList.add('active');
-        }
+        function openCalendarModal() { tg.HapticFeedback.impactOccurred('light'); document.getElementById('overlay').classList.add('active'); document.getElementById('calendar-modal').classList.add('active'); }
+        function openStatsModal() { tg.HapticFeedback.impactOccurred('light'); document.getElementById('overlay').classList.add('active'); document.getElementById('stats-modal').classList.add('active'); }
 
         loadEvents();
     </script>
