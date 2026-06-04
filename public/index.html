@@ -11,177 +11,132 @@
 
     <style>
         :root {
-            /* Apple-like colors */
             --bg-color: var(--tg-theme-bg-color, #F2F2F7);
             --text-color: var(--tg-theme-text-color, #000000);
             --card-bg: var(--tg-theme-secondary-bg-color, #FFFFFF);
             --accent-color: var(--tg-theme-button-color, #007AFF);
             --accent-text: var(--tg-theme-button-text-color, #FFFFFF);
             --hint-color: var(--tg-theme-hint-color, #8E8E93);
-            --danger-color: #FF3B30;
-            --all-day-bg: rgba(0, 122, 255, 0.1);
+            
+            /* Apple System Colors */
+            --blue: #007AFF; --red: #FF3B30; --green: #34C759; --orange: #FF9500; --purple: #AF52DE; --gray: #8E8E93;
         }
 
-        @supports (font: -apple-system-body) {
-            body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif; }
-        }
-
+        @supports (font: -apple-system-body) { body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; } }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background: var(--bg-color); 
-            color: var(--text-color); 
-            margin: 0; 
-            overscroll-behavior-y: none;
-            overflow-x: hidden;
-        }
+        body { background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; overflow-x: hidden; }
 
-        /* Glassmorphism Header */
-        .header-container {
-            position: fixed;
-            top: 0; left: 0; width: 100%;
-            background: rgba(242, 242, 247, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 10;
-            padding: 20px 20px 12px;
-            border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
-        }
-
-        /* Support for dark mode glassmorphism via TG theme */
-        @media (prefers-color-scheme: dark) {
-            .header-container { background: rgba(0, 0, 0, 0.65); border-bottom: 0.5px solid rgba(255, 255, 255, 0.1); }
-        }
+        /* Header */
+        .header-container { position: fixed; top: 0; left: 0; width: 100%; background: rgba(242, 242, 247, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10; padding: 20px 20px 12px; border-bottom: 0.5px solid rgba(0, 0, 0, 0.05); }
+        @media (prefers-color-scheme: dark) { .header-container { background: rgba(0, 0, 0, 0.65); border-bottom: 0.5px solid rgba(255, 255, 255, 0.1); } }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
         .header h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;}
+        .header-actions { display: flex; gap: 10px; }
         
-        .add-btn { background: var(--accent-color); color: var(--accent-text); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); line-height: 1;}
-        .add-btn:active { transform: scale(0.85); }
+        .icon-btn { background: rgba(118, 118, 128, 0.12); color: var(--text-color); border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .icon-btn:active { transform: scale(0.85); }
+        .icon-btn.primary { background: var(--accent-color); color: var(--accent-text); box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);}
 
         .filter-select { width: 100%; padding: 8px 12px; border-radius: 10px; border: none; background: rgba(118, 118, 128, 0.12); color: var(--text-color); font-size: 15px; font-weight: 500; outline: none; appearance: none; text-align: center;}
 
-        /* Pages Slider (Horizontal Scrolling) */
-        .slider-container {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            padding-top: 130px; /* Space for fixed header */
-            padding-bottom: 100px;
-            min-height: 100vh;
-        }
+        /* Pages Slider */
+        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding-top: 130px; padding-bottom: 100px; min-height: 100vh; }
         .slider-container::-webkit-scrollbar { display: none; }
-
-        .day-page {
-            min-width: 100vw;
-            scroll-snap-align: center;
-            padding: 0 20px;
-        }
-
-        .day-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: var(--text-color);
-            letter-spacing: -0.3px;
-        }
-
-        .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; line-height: 1.4; font-weight: 500; }
+        .day-page { min-width: 100vw; scroll-snap-align: center; padding: 0 20px; }
+        .day-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
+        .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; font-weight: 500; }
 
         /* Premium Event Card */
-        .event-card { 
-            position: relative; 
-            background: var(--card-bg); 
-            border-radius: 20px; 
-            padding: 16px; 
-            margin-bottom: 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 4px 14px rgba(0,0,0,0.03); 
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            user-select: none; 
-            -webkit-user-select: none; 
-            border: 2px solid transparent;
-        }
+        .event-card { position: relative; background: var(--card-bg); border-radius: 20px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 14px rgba(0,0,0,0.03); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); user-select: none; -webkit-user-select: none; border: 2px solid transparent; overflow: hidden;}
         .event-card:active { transform: scale(0.97); }
-        .event-content { flex-grow: 1; pointer-events: none; } 
+        .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+        
+        .event-card-inner { display: flex; align-items: center; width: 100%; padding-left: 10px; gap: 12px;}
+        .event-content { flex-grow: 1; pointer-events: none; transition: 0.3s;} 
+        
+        /* Checkbox for Completion */
+        .complete-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--hint-color); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+        .complete-checkbox.done { background: var(--accent-color); border-color: var(--accent-color); }
+        .complete-checkbox.done::after { content: ""; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
         
         .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-        .event-title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
-        
+        .event-title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; transition: 0.3s;}
         .event-time { font-size: 15px; color: var(--hint-color); font-weight: 500; }
-        .event-time.all-day { color: var(--accent-color); background: var(--all-day-bg); padding: 2px 8px; border-radius: 8px; font-size: 13px; font-weight: 600; text-transform: uppercase;}
+        .event-time.all-day { color: var(--accent-color); background: rgba(0, 122, 255, 0.1); padding: 2px 8px; border-radius: 8px; font-size: 13px; font-weight: 600; text-transform: uppercase;}
+        .event-comment, .event-meta { font-size: 14px; color: var(--hint-color); margin-top: 4px; display: block; opacity: 0.9;}
         
-        .event-comment { font-size: 15px; color: var(--hint-color); margin-top: 4px; display: block; line-height: 1.3;}
-        .event-meta { font-size: 13px; color: var(--hint-color); margin-top: 8px; display: flex; align-items: center; gap: 4px; opacity: 0.8;}
-        
-        .delete-btn { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px; transition: 0.2s; }
+        /* Completed State styling */
+        .event-card.is-completed { opacity: 0.6; box-shadow: none; background: rgba(118, 118, 128, 0.05);}
+        .event-card.is-completed .event-title { text-decoration: line-through; color: var(--hint-color); }
+        .event-card.is-completed .color-strip { background: var(--gray) !important; }
 
-        /* Mass Delete Select Mode */
-        .checkbox-circle { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hint-color); opacity: 0; transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); pointer-events: none; display: flex; align-items: center; justify-content: center;}
-        body.select-mode .checkbox-circle { opacity: 1; }
-        body.select-mode .event-card { padding-left: 50px; cursor: pointer; }
-        body.select-mode .delete-btn { opacity: 0; pointer-events: none; }
-        .event-card.selected { border-color: var(--danger-color); background: rgba(255, 59, 48, 0.02); box-shadow: none; }
-        .event-card.selected .checkbox-circle { background: var(--danger-color); border-color: var(--danger-color); }
+        /* Mass Delete Mode styles */
+        .checkbox-circle { position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hint-color); opacity: 0; transition: 0.3s; pointer-events: none; display: flex; align-items: center; justify-content: center;}
+        body.select-mode .checkbox-circle { left: 16px; opacity: 1; }
+        body.select-mode .event-card-inner { transform: translateX(35px); pointer-events: none;}
+        .event-card.selected { border-color: var(--red); background: rgba(255, 59, 48, 0.03); }
+        .event-card.selected .checkbox-circle { background: var(--red); border-color: var(--red); }
         .event-card.selected .checkbox-circle::after { content: ""; width: 6px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
 
-        /* Glassmorphism Bottom Action Bar */
-        .bulk-action-bar { position: fixed; bottom: -100px; left: 0; width: 100%; padding: 16px 20px 30px; background: rgba(242, 242, 247, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 50; }
-        @media (prefers-color-scheme: dark) { .bulk-action-bar { background: rgba(0,0,0,0.75); border-top: 0.5px solid rgba(255,255,255,0.1); } }
+        .bulk-action-bar { position: fixed; bottom: -100px; left: 0; width: 100%; padding: 16px 20px 30px; background: rgba(242, 242, 247, 0.9); backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; transition: 0.4s; z-index: 50; }
+        @media (prefers-color-scheme: dark) { .bulk-action-bar { background: rgba(0,0,0,0.8); border-top: 0.5px solid rgba(255,255,255,0.1); } }
         .bulk-action-bar.active { bottom: 0; }
-        #bulk-count { font-weight: 600; font-size: 16px; }
-        .bulk-actions { display: flex; gap: 8px; }
-        .text-btn { background: rgba(118, 118, 128, 0.12); border: none; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-color); cursor: pointer; transition: 0.2s; }
-        .text-btn:active { transform: scale(0.95); }
-        .text-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); }
+        .text-btn { background: rgba(118, 118, 128, 0.12); border: none; padding: 8px 14px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-color); cursor: pointer;}
+        .text-btn.danger { background: rgba(255, 59, 48, 0.1); color: var(--red); }
 
-        /* Premium Modal (iOS Sheet style) */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
+        /* Modals & Forms */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
         .overlay.active { opacity: 1; visibility: visible; }
-        
         .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px; transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; }
         .modal.active { bottom: 0; }
-        .modal-drag-indicator { width: 36px; height: 5px; background: rgba(0,0,0,0.2); border-radius: 3px; margin: -10px auto 16px; }
         
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
         .close-btn { background: rgba(118, 118, 128, 0.12); border: none; color: var(--text-color); font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 12px; }
 
-        .input-group { background: var(--card-bg); border-radius: 16px; padding: 4px 16px; margin-bottom: 20px; box-shadow: 0 1px 5px rgba(0,0,0,0.02);}
+        /* Presets (Templates) */
+        .presets-scroll { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
+        .presets-scroll::-webkit-scrollbar { display: none; }
+        .preset-chip { padding: 8px 14px; background: var(--card-bg); border-radius: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; cursor: pointer;}
+        .preset-chip .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        .input-group { background: var(--card-bg); border-radius: 16px; padding: 4px 16px; margin-bottom: 20px;}
         .input-group input, .input-group textarea { width: 100%; border: none; background: transparent; color: var(--text-color); font-size: 17px; padding: 14px 0; outline: none; font-family: inherit; }
         .input-group textarea { resize: none; min-height: 60px; }
-        .divider { height: 0.5px; background: rgba(0,0,0,0.1); margin: 0 -16px; }
-        @media (prefers-color-scheme: dark) { .divider { background: rgba(255,255,255,0.1); } }
+        .divider { height: 0.5px; background: rgba(118, 118, 128, 0.2); margin: 0 -16px; }
+        
+        /* Color Picker */
+        .color-picker { display: flex; justify-content: space-between; padding: 14px 0; }
+        .color-circle { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s;}
+        .color-circle.active { border-color: var(--text-color); transform: scale(1.1);}
 
+        /* Toggles */
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; font-size: 17px;}
-        .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .switch { position: relative; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; transition: .3s; border-radius: 31px; }
-        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .3s cubic-bezier(0.25, 0.8, 0.25, 1); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: #34C759; } /* iOS Green */
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; border-radius: 31px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(20px); }
         
-        .time-wrapper { transition: 0.3s; overflow: hidden; }
-        .time-wrapper.hidden { display: none; }
-        
-        .chips-title { font-size: 15px; font-weight: 600; margin-bottom: 4px;}
-        .chips-subtitle { font-size: 13px; color: var(--hint-color); margin-bottom: 12px; }
-        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
-        .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 15px; font-weight: 500; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer; }
-        .chip.active { background: var(--accent-color); color: var(--accent-text); border-color: var(--accent-color); }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; margin-top: 10px;}
+        .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 15px; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; }
+        .chip.active { background: var(--accent-color); color: var(--accent-text); }
+        .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
 
-        .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s;}
-        .save-btn:active { transform: scale(0.97); }
+        /* Month Calendar Modal */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-top: 10px;}
+        .cal-header { font-size: 13px; color: var(--hint-color); font-weight: 600; margin-bottom: 8px;}
+        .cal-day { padding: 10px 0; border-radius: 12px; font-size: 16px; font-weight: 500; position: relative; cursor: pointer; background: var(--card-bg);}
+        .cal-day.empty { background: transparent; }
+        .cal-day.today { color: var(--accent-color); font-weight: 700; background: rgba(0, 122, 255, 0.1); }
+        .cal-dots { display: flex; justify-content: center; gap: 2px; position: absolute; bottom: 4px; left: 0; width: 100%; }
+        .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
 
-        /* Flatpickr Premium Overrides */
-        .flatpickr-calendar { background: var(--card-bg) !important; border: none !important; border-radius: 16px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;}
-        .flatpickr-day { color: var(--text-color) !important; border-radius: 50% !important;}
-        .flatpickr-day.selected { background: var(--accent-color) !important; border-color: var(--accent-color) !important; font-weight: bold;}
-        .flatpickr-month, .flatpickr-weekday { color: var(--text-color) !important; fill: var(--text-color) !important; }
+        /* Stats List */
+        .stat-item { display: flex; justify-content: space-between; padding: 14px 16px; background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; font-size: 16px; font-weight: 500;}
+        .stat-val { font-weight: 700; color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -189,7 +144,11 @@
     <div class="header-container">
         <div class="header">
             <h1>Ежедневник</h1>
-            <button class="add-btn" onclick="openModal()">+</button>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="openStatsModal()">📊</button>
+                <button class="icon-btn" onclick="openCalendarModal()">📅</button>
+                <button class="icon-btn primary" onclick="openModal()">+</button>
+            </div>
         </div>
         <select id="event-filter" class="filter-select" onchange="onFilterChange()">
             <option value="ALL">Все типы дел ▾</option>
@@ -197,30 +156,65 @@
     </div>
 
     <!-- Horizontal Swipeable Container -->
-    <div class="slider-container" id="slider-container">
-        <!-- Страницы будут генерироваться здесь -->
-    </div>
+    <div class="slider-container" id="slider-container"></div>
 
     <!-- Mass Delete Panel -->
     <div id="bulk-action-bar" class="bulk-action-bar">
-        <span id="bulk-count">Выбрано: 0</span>
-        <div class="bulk-actions">
+        <span id="bulk-count" style="font-weight:600; font-size:16px;">Выбрано: 0</span>
+        <div style="display:flex; gap:8px;">
             <button class="text-btn" onclick="selectAllFiltered()">Все</button>
             <button class="text-btn danger" onclick="deleteSelected()">Удалить</button>
             <button class="text-btn" onclick="toggleSelectMode(false)">Отмена</button>
         </div>
     </div>
 
-    <!-- Modal Form -->
-    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+    <!-- Modals Overlay -->
+    <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
+    <!-- 1. Stats Modal -->
+    <div class="modal" id="stats-modal">
+        <div class="modal-header">
+            <h2 id="stats-title">Статистика</h2>
+            <button class="close-btn" onclick="closeAllModals()">Закрыть</button>
+        </div>
+        <div id="stats-content"></div>
+    </div>
+
+    <!-- 2. Calendar Modal -->
+    <div class="modal" id="calendar-modal">
+        <div class="modal-header">
+            <h2 id="month-title">Календарь</h2>
+            <button class="close-btn" onclick="closeAllModals()">Закрыть</button>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+
+    <!-- 3. Edit/Add Modal -->
     <div class="modal" id="modal">
-        <div class="modal-drag-indicator"></div>
         <div class="modal-header">
             <h2 id="modal-title">Новое дело</h2>
-            <button class="close-btn" onclick="closeModal()">Отмена</button>
+            <button class="close-btn" onclick="closeAllModals()">Отмена</button>
         </div>
+        
+        <!-- Presets -->
+        <div class="presets-scroll" id="presets">
+            <div class="preset-chip" onclick="applyPreset('Работа', 'red', true)"><div class="dot" style="background: var(--red)"></div> Работа</div>
+            <div class="preset-chip" onclick="applyPreset('Тренировка', 'green', false)"><div class="dot" style="background: var(--green)"></div> Тренировка</div>
+            <div class="preset-chip" onclick="applyPreset('Встреча', 'blue', false)"><div class="dot" style="background: var(--blue)"></div> Встреча</div>
+            <div class="preset-chip" onclick="applyPreset('Отдых', 'purple', true)"><div class="dot" style="background: var(--purple)"></div> Отдых</div>
+        </div>
+
         <div class="input-group">
-            <input type="text" id="title" placeholder="Название (например, Смена 2/2)" autocomplete="off">
+            <input type="text" id="title" placeholder="Название (например, Учеба)" autocomplete="off">
+            <div class="divider"></div>
+            <!-- Color Picker -->
+            <div class="color-picker" id="color-picker">
+                <div class="color-circle active" data-color="blue" style="background: var(--blue)" onclick="selectColor('blue')"></div>
+                <div class="color-circle" data-color="red" style="background: var(--red)" onclick="selectColor('red')"></div>
+                <div class="color-circle" data-color="green" style="background: var(--green)" onclick="selectColor('green')"></div>
+                <div class="color-circle" data-color="orange" style="background: var(--orange)" onclick="selectColor('orange')"></div>
+                <div class="color-circle" data-color="purple" style="background: var(--purple)" onclick="selectColor('purple')"></div>
+            </div>
             <div class="divider"></div>
             <textarea id="comment" placeholder="Добавить примечание..."></textarea>
         </div>
@@ -229,12 +223,9 @@
             <div class="divider"></div>
             <div class="row-item">
                 <span>Весь день</span>
-                <label class="switch">
-                    <input type="checkbox" id="all-day-toggle">
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="all-day-toggle" onchange="toggleTime()"><span class="slider"></span></label>
             </div>
-            <div id="time-wrapper" class="time-wrapper">
+            <div id="time-wrapper">
                 <div class="divider"></div>
                 <div class="row-item">
                     <span>Время</span>
@@ -242,112 +233,70 @@
                 </div>
             </div>
         </div>
-        <div class="chips-title">Напоминание</div>
-        <div class="chips-subtitle">Выберите, за сколько вас предупредить</div>
+        <div style="font-weight:600; font-size:15px;">Напоминание</div>
         <div class="chips-container" id="chips">
-            <div class="chip" data-val="1440">1 день</div>
-            <div class="chip" data-val="720">12 часов</div>
-            <div class="chip" data-val="180">3 часа</div>
-            <div class="chip" data-val="60">1 час</div>
-            <div class="chip" data-val="30">30 мин</div>
-            <div class="chip" data-val="10">10 мин</div>
-            <div class="chip" data-val="5">5 мин</div>
+            <div class="chip" data-val="1440">1 день</div><div class="chip" data-val="720">12 часов</div><div class="chip" data-val="180">3 часа</div>
+            <div class="chip" data-val="60">1 час</div><div class="chip" data-val="30">30 мин</div><div class="chip" data-val="10">10 мин</div>
         </div>
         <button class="save-btn" id="save-btn" onclick="saveEvent()">Добавить</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        
-        // Подстраиваем цвета под системную тему ТГ
+        tg.expand(); tg.ready();
         if(tg.colorScheme === 'dark') {
             document.documentElement.style.setProperty('--bg-color', '#000000');
             document.documentElement.style.setProperty('--card-bg', '#1C1C1E');
         }
 
         const userId = tg.initDataUnsafe?.user?.id || '123456789';
-        let selectedPrefs = [];
-        let datePickerInstance;
         let allEventsCache = [];
+        let datePickerInstance;
+        let selectedPrefs = [];
+        let selectedColor = 'blue';
         let editingEventId = null;
 
-        // Переменные для выделения (с адаптацией под свайп)
         let currentFilter = 'ALL';
         let isSelectMode = false;
         let selectedIds = new Set();
-        let pressTimer;
-        let isLongPress = false;
+        let pressTimer, isLongPress = false;
         let startX = 0, startY = 0;
 
-        document.getElementById('all-day-toggle').addEventListener('change', function(e) {
-            tg.HapticFeedback.selectionChanged();
-            document.getElementById('time-wrapper').classList.toggle('hidden', e.target.checked);
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
-            datePickerInstance = flatpickr("#dates-picker", {
-                mode: "multiple",
-                dateFormat: "Y-m-d",
-                locale: "ru",
-                disableMobile: "true"
-            });
-        });
-
-        document.querySelectorAll('.chip').forEach(chip => {
-            chip.addEventListener('click', function() {
+            datePickerInstance = flatpickr("#dates-picker", { mode: "multiple", dateFormat: "Y-m-d", locale: "ru", disableMobile: "true" });
+            
+            document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', function() {
                 tg.HapticFeedback.impactOccurred('light');
                 this.classList.toggle('active');
                 const val = parseInt(this.dataset.val);
                 if (selectedPrefs.includes(val)) selectedPrefs = selectedPrefs.filter(v => v !== val);
                 else selectedPrefs.push(val);
-            });
+            }));
         });
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        function toggleTime() {
+            tg.HapticFeedback.selectionChanged();
+            document.getElementById('time-wrapper').style.display = document.getElementById('all-day-toggle').checked ? 'none' : 'block';
         }
 
-        function updateFilterOptions() {
-            const select = document.getElementById('event-filter');
-            const uniqueTitles = [...new Set(allEventsCache.map(e => e.title))];
-            
-            let optionsHtml = '<option value="ALL">Все типы дел ▾</option>';
-            uniqueTitles.forEach(title => {
-                optionsHtml += `<option value="${escapeHtml(title)}">${escapeHtml(title)} ▾</option>`;
+        function selectColor(color) {
+            tg.HapticFeedback.selectionChanged();
+            selectedColor = color;
+            document.querySelectorAll('.color-circle').forEach(el => {
+                el.classList.toggle('active', el.dataset.color === color);
             });
-            
-            select.innerHTML = optionsHtml;
-            select.value = currentFilter;
-            if (select.selectedIndex === -1) {
-                select.value = 'ALL';
-                currentFilter = 'ALL';
-            }
         }
 
-        function onFilterChange() {
-            currentFilter = document.getElementById('event-filter').value;
-            if (isSelectMode) toggleSelectMode(false);
-            renderEvents();
+        function applyPreset(title, color, isAllDay) {
+            tg.HapticFeedback.impactOccurred('medium');
+            document.getElementById('title').value = title;
+            selectColor(color);
+            document.getElementById('all-day-toggle').checked = isAllDay;
+            toggleTime();
         }
 
         const months = ["Янв", "Фев", "Марта", "Апр", "Мая", "Июня", "Июля", "Авг", "Сент", "Окт", "Нояб", "Дек"];
         const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
-
-        function formatDayTitle(dateString) {
-            const d = new Date(dateString);
-            const today = new Date();
-            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            let prefix = "";
-            if (d.toDateString() === today.toDateString()) prefix = "Сегодня, ";
-            else if (d.toDateString() === tomorrow.toDateString()) prefix = "Завтра, ";
-            else prefix = `${days[d.getDay()]}, `;
-
-            return `${prefix}${d.getDate()} ${months[d.getMonth()]}`;
-        }
 
         async function loadEvents() {
             try {
@@ -358,300 +307,290 @@
             } catch (e) { console.error(e); }
         }
 
+        function updateFilterOptions() {
+            const select = document.getElementById('event-filter');
+            const uniqueTitles = [...new Set(allEventsCache.map(e => e.title))];
+            let optionsHtml = '<option value="ALL">Все типы дел ▾</option>';
+            uniqueTitles.forEach(t => optionsHtml += `<option value="${t}">${t} ▾</option>`);
+            select.innerHTML = optionsHtml;
+            select.value = currentFilter;
+        }
+
+        function onFilterChange() {
+            currentFilter = document.getElementById('event-filter').value;
+            if (isSelectMode) toggleSelectMode(false);
+            renderEvents();
+        }
+
+        function formatDayTitle(dateString) {
+            const d = new Date(dateString);
+            const today = new Date();
+            const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+            if (d.toDateString() === today.toDateString()) return `Сегодня, ${d.getDate()} ${months[d.getMonth()]}`;
+            if (d.toDateString() === tomorrow.toDateString()) return `Завтра, ${d.getDate()} ${months[d.getMonth()]}`;
+            return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+        }
+
         function renderEvents() {
             const slider = document.getElementById('slider-container');
             const filteredEvents = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
 
             if (filteredEvents.length === 0) {
-                slider.innerHTML = `<div class="day-page"><div class="empty-state">Нет запланированных дел.<br>Нажмите + чтобы создать.</div></div>`;
+                slider.innerHTML = `<div class="day-page"><div class="empty-state">Нет запланированных дел.</div></div>`;
                 return;
             }
 
-            // Группировка по датам
             const groupedEvents = {};
             filteredEvents.forEach(ev => {
-                const dateObj = new Date(ev.event_date);
-                const dateKey = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).toISOString();
+                const d = new Date(ev.event_date);
+                const dateKey = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
                 if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
                 groupedEvents[dateKey].push(ev);
             });
 
             slider.innerHTML = '';
-            
-            // Сортировка дат
-            Object.keys(groupedEvents).sort().forEach(dateKey => {
-                let pageHTML = `<div class="day-page">
-                                  <div class="day-title">${formatDayTitle(dateKey)}</div>`;
+            Object.keys(groupedEvents).sort().forEach((dateKey, index) => {
+                let pageHTML = `<div class="day-page" id="page-${dateKey.split('T')[0]}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
                 
-                // СОРТИРОВКА ВНУТРИ ДНЯ (Весь день -> По времени)
+                // Сортировка: Сначала активные (весь день -> по времени), затем выполненные
                 groupedEvents[dateKey].sort((a, b) => {
+                    if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
                     if (a.is_all_day && !b.is_all_day) return -1;
                     if (!a.is_all_day && b.is_all_day) return 1;
                     return new Date(a.event_date) - new Date(b.event_date);
                 });
                     
                 groupedEvents[dateKey].forEach(ev => {
-                    const timeHTML = ev.is_all_day 
-                        ? `<span class="event-time all-day">Весь день</span>` 
-                        : `<span class="event-time">${new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>`;
-                    
-                    const commentHtml = ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : '';
-                    const prefsText = (ev.notify_prefs && ev.notify_prefs.length > 0) 
-                        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> ` + ev.notify_prefs.map(p => p >= 60 ? (p/60 + 'ч') : (p + 'м')).join(', ')
-                        : '';
-
-                    const isSelected = selectedIds.has(ev.id) ? 'selected' : '';
+                    const timeHTML = ev.is_all_day ? `<span class="event-time all-day">Весь день</span>` : `<span class="event-time">${new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>`;
+                    const isSel = selectedIds.has(ev.id) ? 'selected' : '';
+                    const isDone = ev.is_completed ? 'is-completed' : '';
+                    const checkClass = ev.is_completed ? 'done' : '';
 
                     pageHTML += `
-                        <div class="event-card ${isSelected}" id="card-${ev.id}"
-                             ontouchstart="handleTouchStart(event, ${ev.id})"
-                             ontouchend="handleTouchEnd(event)"
-                             ontouchmove="handleTouchMove(event)"
-                             onmousedown="handleTouchStart(event, ${ev.id})"
-                             onmouseup="handleTouchEnd(event)"
-                             onmouseleave="handleTouchEnd(event)"
+                        <div class="event-card ${isSel} ${isDone}" id="card-${ev.id}"
+                             ontouchstart="handleTouchStart(event, ${ev.id})" ontouchend="handleTouchEnd(event)" ontouchmove="handleTouchMove(event)"
+                             onmousedown="handleTouchStart(event, ${ev.id})" onmouseup="handleTouchEnd(event)" onmouseleave="handleTouchEnd(event)"
                              onclick="handleCardClick(event, ${ev.id})">
                              
                             <div class="checkbox-circle" id="check-${ev.id}"></div>
+                            <div class="color-strip" style="background: var(--${ev.color || 'blue'})"></div>
                             
-                            <div class="event-content">
-                                <div class="event-header">
-                                    <span class="event-title">${escapeHtml(ev.title)}</span>
-                                    ${timeHTML}
+                            <div class="event-card-inner">
+                                <div class="complete-checkbox ${checkClass}" onclick="toggleComplete(event, ${ev.id}, ${!ev.is_completed})"></div>
+                                <div class="event-content">
+                                    <div class="event-header"><span class="event-title">${ev.title}</span>${timeHTML}</div>
+                                    ${ev.comment ? `<span class="event-comment">${ev.comment}</span>` : ''}
                                 </div>
-                                ${commentHtml}
-                                ${prefsText ? `<span class="event-meta">${prefsText}</span>` : ''}
                             </div>
-
-                            <button class="delete-btn" onclick="deleteSingleEvent(event, ${ev.id})">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
                         </div>
                     `;
                 });
                 pageHTML += `</div>`;
                 slider.innerHTML += pageHTML;
             });
-
-            // Небольшая подсказка о свайпе, если страниц > 1
-            if(Object.keys(groupedEvents).length > 1) {
-                slider.innerHTML += `<div class="day-page" style="display:flex; align-items:center; justify-content:center;">
-                    <div class="empty-state" style="opacity: 0.5;">Больше нет дел 🏁</div>
-                </div>`;
-            }
         }
 
-        // --- ЛОГИКА ВЫДЕЛЕНИЯ И ДОЛГОГО НАЖАТИЯ ---
+        // Завершение дела
+        async function toggleComplete(e, id, status) {
+            e.stopPropagation(); // Отменяем клик по самой карточке
+            tg.HapticFeedback.impactOccurred('medium');
+            
+            // Оптимистичное UI обновление
+            const ev = allEventsCache.find(x => x.id === id);
+            if(ev) ev.is_completed = status;
+            renderEvents();
+
+            await fetch(`/api/events/${id}/toggle`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isCompleted: status })
+            });
+        }
+
+        // Выделение и удаление
         window.handleTouchStart = function(e, id) {
             if (isSelectMode) return;
-            if (e.touches) {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
-            
+            if (e.touches) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
             isLongPress = false;
             pressTimer = setTimeout(() => {
-                isLongPress = true;
-                tg.HapticFeedback.impactOccurred('heavy');
-                toggleSelectMode(true);
-                toggleSelection(id);
+                isLongPress = true; tg.HapticFeedback.impactOccurred('heavy');
+                toggleSelectMode(true); toggleSelection(id);
             }, 500);
         };
-
-        window.handleTouchMove = function(e) {
-            // Если пользователь начал свайпать страницу или скроллить, отменяем долгое нажатие
-            if (e.touches) {
-                let currentX = e.touches[0].clientX;
-                let currentY = e.touches[0].clientY;
-                if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) {
-                    clearTimeout(pressTimer);
-                }
-            }
-        };
-
-        window.handleTouchEnd = function(e) {
-            clearTimeout(pressTimer);
-        };
-
+        window.handleTouchMove = function(e) { if (e.touches && (Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10)) clearTimeout(pressTimer); };
+        window.handleTouchEnd = function(e) { clearTimeout(pressTimer); };
+        
         window.handleCardClick = function(e, id) {
-            if (isLongPress) {
-                isLongPress = false; 
-                return; 
-            }
-            
+            if (isLongPress) { isLongPress = false; return; }
             if (isSelectMode) toggleSelection(id);
             else openModal(id);
         };
 
         function toggleSelectMode(force) {
             isSelectMode = force !== undefined ? force : !isSelectMode;
-            if (isSelectMode) {
-                document.body.classList.add('select-mode');
-                document.getElementById('bulk-action-bar').classList.add('active');
-            } else {
-                document.body.classList.remove('select-mode');
-                document.getElementById('bulk-action-bar').classList.remove('active');
-                selectedIds.clear();
-                isLongPress = false; 
-                renderEvents();
-            }
+            document.body.classList.toggle('select-mode', isSelectMode);
+            document.getElementById('bulk-action-bar').classList.toggle('active', isSelectMode);
+            if (!isSelectMode) { selectedIds.clear(); isLongPress = false; renderEvents(); }
         }
 
         function toggleSelection(id) {
-            if (selectedIds.has(id)) {
-                selectedIds.delete(id);
-                document.getElementById(`card-${id}`).classList.remove('selected');
-            } else {
-                selectedIds.add(id);
-                document.getElementById(`card-${id}`).classList.add('selected');
-            }
+            if (selectedIds.has(id)) { selectedIds.delete(id); document.getElementById(`card-${id}`).classList.remove('selected'); }
+            else { selectedIds.add(id); document.getElementById(`card-${id}`).classList.add('selected'); }
             document.getElementById('bulk-count').textContent = `Выбрано: ${selectedIds.size}`;
         }
 
         function selectAllFiltered() {
-            const filteredEvents = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
-            if (selectedIds.size === filteredEvents.length) {
-                selectedIds.clear(); 
-            } else {
-                filteredEvents.forEach(ev => selectedIds.add(ev.id));
-            }
+            const evs = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
+            if (selectedIds.size === evs.length) selectedIds.clear(); else evs.forEach(ev => selectedIds.add(ev.id));
             document.getElementById('bulk-count').textContent = `Выбрано: ${selectedIds.size}`;
-            renderEvents(); 
+            renderEvents();
         }
 
         async function deleteSelected() {
             if (selectedIds.size === 0) return;
             tg.HapticFeedback.impactOccurred('heavy');
-            tg.showConfirm(`Удалить выбранные дела (${selectedIds.size} шт.)?`, async (yes) => {
+            tg.showConfirm(`Удалить выбранные дела?`, async (yes) => {
                 if (yes) {
-                    await fetch('/api/events/bulk-delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ids: Array.from(selectedIds) })
-                    });
+                    await fetch('/api/events/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: Array.from(selectedIds) }) });
                     tg.HapticFeedback.notificationOccurred('success');
-                    toggleSelectMode(false);
-                    loadEvents();
+                    toggleSelectMode(false); loadEvents();
                 }
             });
         }
 
-        // --- СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ---
+        // Управление модалками
+        function closeAllModals() {
+            document.getElementById('overlay').classList.remove('active');
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            datePickerInstance.clear();
+            document.getElementById('title').value = '';
+            document.getElementById('comment').value = '';
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            selectedPrefs = [];
+            editingEventId = null;
+        }
+
         function openModal(id = null) {
             tg.HapticFeedback.impactOccurred('medium');
             editingEventId = id;
-            
-            const titleEl = document.getElementById('modal-title');
-            const saveBtnEl = document.getElementById('save-btn');
-
             if (id !== null) {
                 const ev = allEventsCache.find(e => e.id === id);
-                titleEl.textContent = 'Редактировать';
-                saveBtnEl.textContent = 'Сохранить';
-                
+                document.getElementById('modal-title').textContent = 'Редактировать';
+                document.getElementById('save-btn').textContent = 'Сохранить';
                 document.getElementById('title').value = ev.title;
                 document.getElementById('comment').value = ev.comment || '';
+                selectColor(ev.color || 'blue');
                 
                 const d = new Date(ev.event_date);
-                const dateString = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
-                
                 datePickerInstance.set('mode', 'single');
-                datePickerInstance.setDate(dateString);
-                
+                datePickerInstance.setDate(d.toISOString().split('T')[0]);
                 document.getElementById('all-day-toggle').checked = ev.is_all_day;
-                document.getElementById('time-wrapper').classList.toggle('hidden', ev.is_all_day);
+                toggleTime();
+                if (!ev.is_all_day) document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
                 
-                if (!ev.is_all_day) {
-                    const timeString = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
-                    document.getElementById('time-picker').value = timeString;
-                }
-
                 selectedPrefs = ev.notify_prefs || [];
-                document.querySelectorAll('.chip').forEach(chip => {
-                    const val = parseInt(chip.dataset.val);
-                    if (selectedPrefs.includes(val)) chip.classList.add('active');
-                    else chip.classList.remove('active');
-                });
+                document.querySelectorAll('.chip').forEach(chip => { if(selectedPrefs.includes(parseInt(chip.dataset.val))) chip.classList.add('active'); });
             } else {
-                titleEl.textContent = 'Новое дело';
-                saveBtnEl.textContent = 'Добавить';
+                document.getElementById('modal-title').textContent = 'Новое дело';
+                document.getElementById('save-btn').textContent = 'Добавить';
                 datePickerInstance.set('mode', 'multiple');
+                selectColor('blue');
+                document.getElementById('all-day-toggle').checked = false;
+                toggleTime();
             }
-
             document.getElementById('overlay').classList.add('active');
             document.getElementById('modal').classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('overlay').classList.remove('active');
-            document.getElementById('modal').classList.remove('active');
-            
-            document.getElementById('title').value = '';
-            document.getElementById('comment').value = '';
-            document.getElementById('all-day-toggle').checked = false;
-            document.getElementById('time-wrapper').classList.remove('hidden');
-            datePickerInstance.clear();
-            selectedPrefs = [];
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            editingEventId = null;
-        }
-
         async function saveEvent() {
             const title = document.getElementById('title').value;
-            const comment = document.getElementById('comment').value;
-            const selectedDates = datePickerInstance.selectedDates;
+            const dates = datePickerInstance.selectedDates;
             const isAllDay = document.getElementById('all-day-toggle').checked;
             const timeVal = document.getElementById('time-picker').value;
 
-            if (!title || selectedDates.length === 0 || (!isAllDay && !timeVal)) {
-                tg.HapticFeedback.notificationOccurred('error');
-                return tg.showAlert('Укажите название и дату');
-            }
+            if (!title || dates.length === 0) return tg.showAlert('Укажите название и дату');
+            document.getElementById('save-btn').textContent = 'Сохранение...';
 
-            const btn = document.getElementById('save-btn');
-            btn.textContent = 'Сохранение...';
+            const [h, m] = isAllDay ? [0, 0] : timeVal.split(':');
+            const basePayload = { title, notifyPrefs: selectedPrefs, comment: document.getElementById('comment').value, isAllDay, color: selectedColor };
 
-            const [hours, minutes] = isAllDay ? [0, 0] : timeVal.split(':');
-            
             if (editingEventId !== null) {
-                const newDate = new Date(selectedDates[0]);
-                newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-                await fetch(`/api/events/${editingEventId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, date: newDate.toISOString(), notifyPrefs: selectedPrefs, comment, isAllDay })
-                });
+                const d = new Date(dates[0]); d.setHours(parseInt(h), parseInt(m), 0, 0);
+                await fetch(`/api/events/${editingEventId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, date: d.toISOString() }) });
             } else {
-                const finalDates = selectedDates.map(d => {
-                    const newDate = new Date(d);
-                    newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                    return newDate.toISOString();
-                });
-
-                await fetch('/api/events', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, title, dates: finalDates, notifyPrefs: selectedPrefs, comment, isAllDay })
-                });
+                const finalDates = dates.map(d => { const dt = new Date(d); dt.setHours(parseInt(h), parseInt(m), 0, 0); return dt.toISOString(); });
+                await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, userId, dates: finalDates }) });
             }
-
             tg.HapticFeedback.notificationOccurred('success');
-            closeModal();
-            loadEvents();
+            closeAllModals(); loadEvents();
         }
 
-        window.deleteSingleEvent = function(e, id) {
-            e.stopPropagation(); 
-            tg.HapticFeedback.impactOccurred('heavy');
-            tg.showConfirm('Удалить событие?', async (yes) => {
-                if (yes) {
-                    await fetch(`/api/events/${id}`, { method: 'DELETE' });
-                    tg.HapticFeedback.notificationOccurred('success');
-                    loadEvents();
-                }
+        // МЕСЯЧНЫЙ КАЛЕНДАРЬ
+        function openCalendarModal() {
+            tg.HapticFeedback.impactOccurred('light');
+            const grid = document.getElementById('calendar-grid');
+            const now = new Date();
+            const year = now.getFullYear(), month = now.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(year, month, 1).getDay(); // 0=Вс
+            const shift = firstDay === 0 ? 6 : firstDay - 1; // Сдвиг для Пн
+            
+            document.getElementById('month-title').textContent = `${["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"][month]} ${year}`;
+            
+            let html = '<div class="cal-header">Пн</div><div class="cal-header">Вт</div><div class="cal-header">Ср</div><div class="cal-header">Чт</div><div class="cal-header">Пт</div><div class="cal-header">Сб</div><div class="cal-header">Вс</div>';
+            for(let i=0; i<shift; i++) html += `<div class="cal-day empty"></div>`;
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = new Date(year, month, d).toISOString().split('T')[0];
+                const isToday = (d === now.getDate()) ? 'today' : '';
+                
+                // Ищем события на этот день
+                const dayEvents = allEventsCache.filter(e => e.event_date.startsWith(dateStr));
+                let dotsHtml = '<div class="cal-dots">';
+                dayEvents.slice(0, 3).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
+                dotsHtml += '</div>';
+
+                html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${dateStr}')">${d}${dotsHtml}</div>`;
+            }
+            grid.innerHTML = html;
+            
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('calendar-modal').classList.add('active');
+        }
+
+        function scrollToDate(dateStr) {
+            closeAllModals();
+            const page = document.getElementById(`page-${dateStr}`);
+            if (page) {
+                page.scrollIntoView({ behavior: 'smooth' });
+                tg.HapticFeedback.selectionChanged();
+            } else {
+                tg.showAlert('На эту дату нет дел.');
+            }
+        }
+
+        // СТАТИСТИКА
+        function openStatsModal() {
+            tg.HapticFeedback.impactOccurred('light');
+            const now = new Date();
+            const currentMonthEvents = allEventsCache.filter(e => new Date(e.event_date).getMonth() === now.getMonth());
+            
+            const stats = {};
+            currentMonthEvents.forEach(e => {
+                stats[e.title] = (stats[e.title] || 0) + 1;
             });
-        };
+
+            let html = `<p style="color:var(--hint-color); margin-top:0;">В этом месяце запланировано:</p>`;
+            if (Object.keys(stats).length === 0) html += `<div class="empty-state">Нет данных</div>`;
+            
+            Object.entries(stats).sort((a,b) => b[1]-a[1]).forEach(([title, count]) => {
+                html += `<div class="stat-item"><span>${title}</span> <span class="stat-val">${count}</span></div>`;
+            });
+            
+            document.getElementById('stats-content').innerHTML = html;
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('stats-modal').classList.add('active');
+        }
 
         loadEvents();
     </script>
