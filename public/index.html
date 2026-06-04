@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ежедневник</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            padding: 15px; margin: 0;
+        }
+        input, button {
+            width: 100%; padding: 10px; margin-bottom: 10px;
+            box-sizing: border-box; border-radius: 8px; border: 1px solid #ccc;
+        }
+        button { background-color: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); border: none; font-weight: bold; }
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 14px;}
+        .event-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;}
+        .delete-btn { width: auto; background: red; margin: 0; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h3>Добавить дело 📅</h3>
+    <input type="text" id="title" placeholder="Что нужно сделать?" required>
+    <input type="datetime-local" id="date" required>
+    
+    <p>Напомнить за:</p>
+    <div class="checkbox-grid">
+        <label><input type="checkbox" value="1440"> 24 часа</label>
+        <label><input type="checkbox" value="720"> 12 часов</label>
+        <label><input type="checkbox" value="180"> 3 часа</label>
+        <label><input type="checkbox" value="60"> 1 час</label>
+        <label><input type="checkbox" value="30"> 30 минут</label>
+        <label><input type="checkbox" value="10"> 10 минут</label>
+        <label><input type="checkbox" value="5"> 5 минут</label>
+    </div>
+    
+    <button onclick="saveEvent()">Сохранить</button>
+
+    <h3>Мои дела:</h3>
+    <div id="events-list"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userId = tg.initDataUnsafe?.user?.id || '123456789'; // 123456789 для теста в браузере
+
+        async function loadEvents() {
+            const res = await fetch(`/api/events?userId=${userId}`);
+            const events = await res.json();
+            const list = document.getElementById('events-list');
+            list.innerHTML = '';
+            
+            events.forEach(ev => {
+                list.innerHTML += `
+                    <div class="event-card">
+                        <div>
+                            <strong>${ev.title}</strong><br>
+                            <small>${new Date(ev.event_date).toLocaleString()}</small>
+                        </div>
+                        <button class="delete-btn" onclick="deleteEvent(${ev.id})">❌</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function saveEvent() {
+            const title = document.getElementById('title').value;
+            const date = document.getElementById('date').value;
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const notifyPrefs = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+            if (!title || !date) return tg.showAlert('Заполни название и дату!');
+
+            await fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, title, date, notifyPrefs })
+            });
+
+            document.getElementById('title').value = '';
+            document.getElementById('date').value = '';
+            checkboxes.forEach(cb => cb.checked = false);
+            tg.HapticFeedback.notificationOccurred('success');
+            loadEvents();
+        }
+
+        async function deleteEvent(id) {
+            await fetch(`/api/events/${id}`, { method: 'DELETE' });
+            loadEvents();
+        }
+
+        loadEvents();
+    </script>
+</body>
+</html>
