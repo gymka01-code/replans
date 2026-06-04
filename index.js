@@ -55,7 +55,7 @@ app.get('/api/events', async (req, res) => {
     res.json(rows);
 });
 
-// Создать новые дела (одно или несколько дат)
+// Создать новые дела
 app.post('/api/events', async (req, res) => {
     const { userId, title, dates, notifyPrefs, comment, isAllDay } = req.body;
     
@@ -68,7 +68,7 @@ app.post('/api/events', async (req, res) => {
     res.json({ success: true });
 });
 
-// НОВОЕ: Обновить существующее дело
+// Обновить существующее дело
 app.put('/api/events/:id', async (req, res) => {
     const { title, date, notifyPrefs, comment, isAllDay } = req.body;
     await pool.query(
@@ -80,10 +80,23 @@ app.put('/api/events/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// Удалить дело
+// Удалить одно дело
 app.delete('/api/events/:id', async (req, res) => {
     await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
     res.json({ success: true });
+});
+
+// НОВОЕ: Массовое удаление дел
+app.post('/api/events/bulk-delete', async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || ids.length === 0) return res.json({ success: true });
+    try {
+        await pool.query('DELETE FROM events WHERE id = ANY($1::int[])', [ids]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Ошибка при массовом удалении:", e);
+        res.status(500).json({ error: "Ошибка БД" });
+    }
 });
 
 // Крон для уведомлений
