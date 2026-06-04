@@ -61,7 +61,6 @@
         .event-time.all-day { color: var(--accent-color); background: rgba(0, 122, 255, 0.1); padding: 2px 8px; border-radius: 8px; font-size: 13px; font-weight: 600; text-transform: uppercase;}
         .event-comment { font-size: 14px; color: var(--hint-color); margin-top: 4px; display: block; opacity: 0.9;}
         
-        /* Subtasks Display */
         .subtasks-list { margin-top: 12px; pointer-events: auto; }
         .subtask-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; color: var(--text-color); cursor: pointer;}
         .subtask-item:active { opacity: 0.5; }
@@ -120,12 +119,14 @@
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(20px); }
         
-        /* Dynamic Subtasks Inputs */
         .subtasks-builder { display: none; padding-top: 10px; padding-bottom: 10px;}
         .st-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .st-input-row input { flex-grow: 1; padding: 12px 14px; border-radius: 12px; border: none; background: rgba(118,118,128,0.08); color: var(--text-color); font-size: 16px; outline: none;}
         .st-del-btn { background: rgba(255, 59, 48, 0.1); color: var(--red); width: 32px; height: 32px; border-radius: 50%; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer;}
         .add-st-btn { background: transparent; color: var(--accent-color); border: none; font-size: 16px; font-weight: 500; padding: 10px 0; cursor: pointer;}
+
+        .time-row { display: flex; align-items: center; gap: 10px;}
+        .time-input { background: rgba(118,118,128,0.08); color: var(--text-color); border: none; padding: 8px 12px; border-radius: 10px; font-size: 16px; font-weight: 600;}
 
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; margin-top: 10px;}
         .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 15px; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; }
@@ -150,7 +151,7 @@
         <div class="header">
             <h1>Ежедневник</h1>
             <div class="header-actions">
-                <button class="icon-btn" onclick="exportCalendar()" title="Добавить в Календарь">↗️</button>
+                <button class="icon-btn" onclick="exportCalendar()" title="Добавить в Apple/Google Календарь">↗️</button>
                 <button class="icon-btn" onclick="openStatsModal()">📊</button>
                 <button class="icon-btn" onclick="openCalendarModal()">📅</button>
                 <button class="icon-btn primary" onclick="openModal()">+</button>
@@ -222,7 +223,6 @@
                 <span>Список дел (Подзадачи)</span>
                 <label class="switch"><input type="checkbox" id="st-toggle" onchange="toggleSubtasksBuilder()"><span class="slider"></span></label>
             </div>
-            
             <div class="subtasks-builder" id="subtasks-builder">
                 <div id="st-list"></div>
                 <button class="add-st-btn" onclick="addSubtaskInput()">+ Добавить пункт</button>
@@ -239,8 +239,12 @@
             <div id="time-wrapper">
                 <div class="divider"></div>
                 <div class="row-item">
-                    <span>Время</span>
-                    <input type="time" id="time-picker" value="09:00" style="width: auto; text-align: right; padding: 0; font-weight: 600;">
+                    <span>Время (Начало — Конец)</span>
+                    <div class="time-row">
+                        <input type="time" id="time-picker" class="time-input" value="09:00" onchange="autoAdjustEnd()"> 
+                        <span style="color:var(--hint-color)">-</span> 
+                        <input type="time" id="time-picker-end" class="time-input" value="10:00">
+                    </div>
                 </div>
             </div>
         </div>
@@ -289,13 +293,30 @@
             }));
         });
 
-        // ЭКСПОРТ
-        function exportCalendar() {
-            tg.HapticFeedback.impactOccurred('medium');
-            window.location.href = `/api/calendar/${userId}.ics`;
+        // ИСПРАВЛЕННЫЙ ЭКСПОРТ ЧЕРЕЗ БОТА
+        async function exportCalendar() {
+            tg.HapticFeedback.impactOccurred('heavy');
+            tg.showAlert('Календарь сейчас придет тебе в личные сообщения от бота!');
+            try {
+                await fetch('/api/export', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ userId }) 
+                });
+            } catch (e) { console.error("Ошибка экспорта", e); }
         }
 
-        // ПОДЗАДАЧИ (Билдер)
+        // АВТОПОДСТРОЙКА КОНЦА ВРЕМЕНИ (+1 ЧАС)
+        function autoAdjustEnd() {
+            const startVal = document.getElementById('time-picker').value;
+            if (startVal) {
+                const [h, m] = startVal.split(':');
+                let endH = parseInt(h) + 1;
+                if (endH >= 24) endH = 23; 
+                document.getElementById('time-picker-end').value = `${String(endH).padStart(2, '0')}:${m}`;
+            }
+        }
+
         function toggleSubtasksBuilder() {
             tg.HapticFeedback.selectionChanged();
             const show = document.getElementById('st-toggle').checked;
@@ -423,12 +444,17 @@
                 });
                     
                 groupedEvents[dateKey].forEach(ev => {
-                    const timeHTML = ev.is_all_day ? `<span class="event-time all-day">Весь день</span>` : `<span class="event-time">${new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>`;
+                    let timeHTML = `<span class="event-time all-day">Весь день</span>`;
+                    if (!ev.is_all_day) {
+                        const start = new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                        const end = ev.end_date ? ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : '';
+                        timeHTML = `<span class="event-time">${start}${end}</span>`;
+                    }
+                    
                     const isSel = selectedIds.has(ev.id) ? 'selected' : '';
                     const isDone = ev.is_completed ? 'is-completed' : '';
                     const checkClass = ev.is_completed ? 'done' : '';
 
-                    // Рендер подзадач в карточке
                     let subtasksHtml = '';
                     if (ev.subtasks && ev.subtasks.length > 0) {
                         subtasksHtml = `<div class="subtasks-list">`;
@@ -469,7 +495,6 @@
             });
         }
 
-        // Завершение дела целиком
         async function toggleComplete(e, id, status) {
             e.stopPropagation(); 
             tg.HapticFeedback.impactOccurred('medium');
@@ -479,14 +504,13 @@
             await fetch(`/api/events/${id}/toggle`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isCompleted: status }) });
         }
 
-        // Завершение 1 пункта из чеклиста
         async function toggleSubtask(e, eventId, subIndex, status) {
             e.stopPropagation();
             tg.HapticFeedback.impactOccurred('light');
             const ev = allEventsCache.find(x => x.id === eventId);
             if(ev && ev.subtasks && ev.subtasks[subIndex]) {
                 ev.subtasks[subIndex].isDone = status;
-                renderEvents(); // оптимистичное обновление
+                renderEvents(); 
                 await fetch(`/api/events/${eventId}/subtasks`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subtasks: ev.subtasks }) });
             }
         }
@@ -566,7 +590,6 @@
                 document.getElementById('comment').value = ev.comment || '';
                 selectColor(ev.color || 'blue');
                 
-                // Загружаем подзадачи
                 const list = document.getElementById('st-list');
                 list.innerHTML = '';
                 if (ev.subtasks && ev.subtasks.length > 0) {
@@ -580,7 +603,16 @@
                 datePickerInstance.setDate(getLocalDateString(d));
                 document.getElementById('all-day-toggle').checked = ev.is_all_day;
                 toggleTime();
-                if (!ev.is_all_day) document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+                
+                if (!ev.is_all_day) {
+                    document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+                    if (ev.end_date) {
+                        const endD = new Date(ev.end_date);
+                        document.getElementById('time-picker-end').value = String(endD.getHours()).padStart(2, '0') + ":" + String(endD.getMinutes()).padStart(2, '0');
+                    } else {
+                        autoAdjustEnd();
+                    }
+                }
                 
                 selectedPrefs = ev.notify_prefs || [];
                 document.querySelectorAll('.chip').forEach(chip => { if(selectedPrefs.includes(parseInt(chip.dataset.val))) chip.classList.add('active'); });
@@ -590,6 +622,8 @@
                 datePickerInstance.set('mode', 'multiple');
                 selectColor('blue');
                 document.getElementById('all-day-toggle').checked = false;
+                document.getElementById('time-picker').value = "09:00";
+                document.getElementById('time-picker-end').value = "10:00";
                 toggleTime();
             }
             document.getElementById('overlay').classList.add('active');
@@ -601,26 +635,44 @@
             const dates = datePickerInstance.selectedDates;
             const isAllDay = document.getElementById('all-day-toggle').checked;
             const timeVal = document.getElementById('time-picker').value;
+            const timeEndVal = document.getElementById('time-picker-end').value;
             const subtasks = getSubtasksFromBuilder();
 
             if (!title || dates.length === 0) return tg.showAlert('Укажите название и дату');
             document.getElementById('save-btn').textContent = 'Сохранение...';
 
             const [h, m] = isAllDay ? [0, 0] : timeVal.split(':');
+            const [eh, em] = isAllDay ? [0, 0] : timeEndVal.split(':');
+            
             const basePayload = { title, notifyPrefs: selectedPrefs, comment: document.getElementById('comment').value, isAllDay, color: selectedColor, subtasks };
 
             if (editingEventId !== null) {
                 const d = new Date(dates[0]); d.setHours(parseInt(h), parseInt(m), 0, 0);
-                await fetch(`/api/events/${editingEventId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, date: d.toISOString() }) });
+                let ed = null;
+                if (!isAllDay) {
+                    ed = new Date(dates[0]); ed.setHours(parseInt(eh), parseInt(em), 0, 0);
+                }
+                await fetch(`/api/events/${editingEventId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, date: d.toISOString(), endDate: ed ? ed.toISOString() : null }) });
             } else {
-                const finalDates = dates.map(d => { const dt = new Date(d); dt.setHours(parseInt(h), parseInt(m), 0, 0); return dt.toISOString(); });
-                await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, userId, dates: finalDates }) });
+                const finalDates = [];
+                const finalEndDates = [];
+                dates.forEach(d => {
+                    const dt = new Date(d); dt.setHours(parseInt(h), parseInt(m), 0, 0);
+                    finalDates.push(dt.toISOString());
+                    
+                    if (!isAllDay) {
+                        const edt = new Date(d); edt.setHours(parseInt(eh), parseInt(em), 0, 0);
+                        finalEndDates.push(edt.toISOString());
+                    } else {
+                        finalEndDates.push(null);
+                    }
+                });
+                await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...basePayload, userId, dates: finalDates, endDates: finalEndDates }) });
             }
             tg.HapticFeedback.notificationOccurred('success');
             closeAllModals(); loadEvents();
         }
 
-        // КАЛЕНДАРЬ
         function openCalendarModal() {
             tg.HapticFeedback.impactOccurred('light');
             const grid = document.getElementById('calendar-grid');
@@ -661,7 +713,6 @@
             else tg.showAlert('На эту дату нет дел.');
         }
 
-        // СТАТИСТИКА
         function openStatsModal() {
             tg.HapticFeedback.impactOccurred('light');
             const now = new Date();
