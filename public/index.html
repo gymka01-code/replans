@@ -10,14 +10,16 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
     <style>
-        /* Цвета Apple iOS */
+        /* Идеальные цвета Apple iOS */
         :root {
             --ios-bg: #F2F2F7;
             --ios-card: #FFFFFF;
             --ios-text: #000000;
-            --ios-hint: #8E8E93;
-            --ios-sep: rgba(60, 60, 67, 0.1);
-            --blue: #007AFF; --red: #FF3B30; --green: #34C759; --orange: #FF9500; --purple: #AF52DE; --gray: #8E8E93;
+            --ios-text-sec: #8E8E93;
+            --ios-sep: rgba(60, 60, 67, 0.15);
+            --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-green: #34C759; 
+            --ios-orange: #FF9500; --ios-purple: #AF52DE; --ios-gray: #8E8E93;
+            --spring: cubic-bezier(0.32, 0.72, 0, 1);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -25,183 +27,190 @@
                 --ios-bg: #000000;
                 --ios-card: #1C1C1E;
                 --ios-text: #FFFFFF;
-                --ios-hint: #EBEBF5;
+                --ios-text-sec: #EBEBF599;
                 --ios-sep: rgba(84, 84, 88, 0.65);
+                --ios-blue: #0A84FF; --ios-red: #FF453A; --ios-green: #32D74B;
+                --ios-orange: #FF9F0A; --ios-purple: #BF5AF2;
             }
         }
 
         @supports (font: -apple-system-body) { 
-            body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Helvetica, Arial, sans-serif; } 
+            body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Text", Helvetica, sans-serif; } 
         }
         
-        /* Запрет выделения текста синим цветом */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        input, textarea { -webkit-user-select: auto; user-select: auto; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        input, textarea { font-family: inherit; }
         
-        body { background: #000000; color: var(--ios-text); margin: 0; padding: 0; overscroll-behavior-y: none; overflow-x: hidden; }
+        body { background: #000; color: var(--ios-text); margin: 0; padding: 0; overscroll-behavior-y: none; overflow-x: hidden; }
 
         /* 3D Обертка приложения */
         #app-wrap {
             background: var(--ios-bg); min-height: 100vh; width: 100%; position: relative; z-index: 1;
-            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
+            transition: transform 0.4s var(--spring), border-radius 0.4s, filter 0.4s;
             transform-origin: top center;
         }
-        body.modal-open #app-wrap { transform: scale(0.93) translateY(12px); border-radius: 20px; overflow: hidden; }
+        body.modal-open #app-wrap { transform: scale(0.93) translateY(12px); border-radius: 20px; overflow: hidden; filter: brightness(0.7); }
         
-        #app-dimmer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 99; }
-        body.modal-open #app-dimmer { opacity: 1; pointer-events: auto; }
+        #app-dimmer { position: absolute; inset: 0; background: transparent; opacity: 0; pointer-events: none; z-index: 99; transition: 0.4s; }
+        body.modal-open #app-dimmer { pointer-events: auto; }
 
-        /* Шапка Apple Style */
+        /* Шапка iOS */
         .header-container { 
             position: fixed; top: 0; left: 0; width: 100%; 
             background: rgba(242, 242, 247, 0.75); 
-            backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); 
+            backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%); 
             z-index: 10; padding: 16px 20px 10px; border-bottom: 0.5px solid var(--ios-sep); transition: 0.3s;
         }
         @media (prefers-color-scheme: dark) { .header-container { background: rgba(0, 0, 0, 0.65); } }
+        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;}
-        .header h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -0.5px;}
+        .header h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -1px;}
         .header-actions { display: flex; gap: 8px; transition: 0.3s;}
         
-        .icon-btn { background: var(--ios-sep); color: var(--ios-text); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 16px;}
+        .icon-btn { background: var(--ios-sep); color: var(--ios-text); border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 16px;}
         .icon-btn:active { transform: scale(0.85); opacity: 0.7;}
-        .icon-btn.primary { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);}
+        .icon-btn.primary { background: var(--ios-blue); color: white; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);}
         
-        .filter-select { width: 100%; padding: 8px; border-radius: 10px; border: none; background: var(--ios-sep); color: var(--ios-text); font-size: 16px; font-weight: 500; text-align: center; -webkit-appearance: none; appearance: none; transition: 0.3s;}
+        .filter-select { width: 100%; padding: 8px; border-radius: 10px; border: none; background: var(--ios-sep); color: var(--ios-text); font-size: 16px; font-weight: 500; text-align: center; appearance: none; -webkit-appearance: none; transition: 0.3s; }
 
-        /* Слайдер с делами */
-        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 130px; padding-bottom: 100px; min-height: 100vh; }
+        /* Контейнер карточек */
+        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-top: 130px; padding-bottom: 100px; min-height: 100vh; scrollbar-width: none; }
         .slider-container::-webkit-scrollbar { display: none; }
         .day-page { min-width: 100vw; scroll-snap-align: center; padding: 0 16px; }
         .day-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px; padding-left: 4px;}
-        .empty-state { text-align: center; color: var(--ios-hint); margin-top: 50px; font-size: 17px; font-weight: 500; }
+        .empty-state { text-align: center; color: var(--ios-text-sec); margin-top: 50px; font-size: 17px; font-weight: 500; }
 
-        /* Карточка iOS */
+        /* Карточка Дела Premium */
         .event-card { 
-            position: relative; background: var(--ios-card); border-radius: 12px; padding: 14px 16px; 
-            display: flex; flex-direction: column; z-index: 2; margin-bottom: 12px;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s, background 0.3s; 
-            width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+            position: relative; background: var(--ios-card); border-radius: 16px; padding: 14px 16px; 
+            display: flex; flex-direction: column; z-index: 2; margin-bottom: 14px;
+            transition: transform 0.3s var(--spring), opacity 0.3s; 
+            width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;
         }
-        .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-radius: 12px 0 0 12px;}
+        .event-card:active { transform: scale(0.97); }
+        .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 16px 0 0 16px;}
         
-        .event-card-inner { display: flex; align-items: flex-start; width: 100%; padding-left: 8px; gap: 14px; transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);}
+        .event-card-inner { display: flex; align-items: flex-start; width: 100%; padding-left: 10px; gap: 14px; transition: transform 0.3s var(--spring);}
         .event-content { flex-grow: 1; pointer-events: none; width: 100%;} 
         
-        .complete-checkbox { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ios-hint); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; pointer-events: auto;}
-        .complete-checkbox.done { background: var(--blue); border-color: var(--blue); }
+        .complete-checkbox { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--ios-text-sec); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; pointer-events: auto; background: transparent; }
+        .complete-checkbox.done { background: var(--ios-blue); border-color: var(--ios-blue); }
         .complete-checkbox.done::after { content: ""; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
         
-        .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
-        .event-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: var(--ios-text); transition: 0.3s;}
-        .event-time { font-size: 15px; color: var(--ios-hint); font-weight: 500; transition: 0.3s;}
-        .event-time.all-day { color: var(--blue); background: rgba(0, 122, 255, 0.1); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600;}
-        .event-comment { font-size: 15px; color: var(--ios-hint); margin-top: 4px; display: block; line-height: 1.3;}
-        
-        /* Состояние: Выполнено (Красивое угасание) */
-        .event-card.is-completed { opacity: 0.5; box-shadow: none; }
-        .event-card.is-completed .event-title { text-decoration: line-through; color: var(--ios-hint); }
+        .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .event-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; color: var(--ios-text); transition: 0.3s;}
+        .event-time { font-size: 14px; color: var(--ios-text-sec); font-weight: 500; display: flex; align-items: center; gap: 4px;}
+        .event-time.all-day { color: var(--ios-blue); background: rgba(0, 122, 255, 0.1); padding: 3px 8px; border-radius: 8px; font-size: 13px; font-weight: 600;}
+        .event-comment { font-size: 15px; color: var(--ios-text-sec); margin-top: 4px; display: block; line-height: 1.3;}
+        .reminder-icon { font-size: 12px; color: var(--ios-text-sec); }
+
+        /* Вложенные подзадачи на главном экране */
+        .card-subtasks { margin-top: 12px; padding-top: 10px; border-top: 0.5px solid var(--ios-sep); display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+        .card-subtask-item { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ios-text); }
+        .card-subtask-item .sub-check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--ios-text-sec); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .card-subtask-item.done .sub-check { background: var(--ios-blue); border-color: var(--ios-blue); }
+        .card-subtask-item.done .sub-check::after { content: ""; width: 4px; height: 8px; border: solid white; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-bottom: 1px;}
+        .card-subtask-item.done span { text-decoration: line-through; color: var(--ios-text-sec); }
+
+        /* Состояние: Выполнено */
+        .event-card.is-completed { opacity: 0.6; box-shadow: none; }
+        .event-card.is-completed .event-title { text-decoration: line-through; color: var(--ios-text-sec); }
         .event-card.is-completed .color-strip { opacity: 0; }
 
-        /* ИДЕАЛЬНЫЙ РЕЖИМ ВЫДЕЛЕНИЯ (APPLE SELECT MODE) */
-        .select-circle {
-            position: absolute; left: -35px; top: 50%; transform: translateY(-50%);
-            width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ios-hint);
-            transition: 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-            display: flex; align-items: center; justify-content: center; opacity: 0;
-        }
+        /* Режим выбора (Select Mode) */
+        .select-circle { position: absolute; left: -35px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ios-text-sec); transition: 0.3s var(--spring); display: flex; align-items: center; justify-content: center; opacity: 0; }
         body.select-mode .select-circle { left: 16px; opacity: 1; }
-        body.select-mode .event-card-inner { transform: translateX(40px); pointer-events: none;}
-        
-        .event-card.selected .select-circle { background: var(--blue); border-color: var(--blue); }
+        body.select-mode .event-card-inner { transform: translateX(36px); pointer-events: none;}
+        .event-card.selected .select-circle { background: var(--ios-blue); border-color: var(--ios-blue); }
         .event-card.selected .select-circle::after { content: ''; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px;}
 
-        /* Нижняя панель действий (iOS Toolbar) */
-        .bulk-action-bar {
-            position: fixed; bottom: -100px; left: 0; width: 100%;
-            background: rgba(242, 242, 247, 0.85); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-top: 0.5px solid var(--ios-sep);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px 30px; transition: 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-            z-index: 50;
-        }
+        /* Нижняя панель действий (Bulk Bar) */
+        .bulk-action-bar { position: fixed; bottom: -100px; left: 0; width: 100%; background: rgba(242, 242, 247, 0.85); backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%); border-top: 0.5px solid var(--ios-sep); display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 30px; transition: 0.4s var(--spring); z-index: 50; }
         @media (prefers-color-scheme: dark) { .bulk-action-bar { background: rgba(0, 0, 0, 0.75); } }
         body.select-mode .bulk-action-bar { bottom: 0; }
-        
-        .toolbar-btn { background: transparent; border: none; font-size: 17px; font-weight: 400; color: var(--blue); cursor: pointer; padding: 0;}
-        .toolbar-btn.danger { color: var(--red); font-weight: 600; opacity: 0.5; pointer-events: none; transition: 0.2s;}
+        .toolbar-btn { background: transparent; border: none; font-size: 17px; font-weight: 400; color: var(--ios-blue); cursor: pointer; padding: 0;}
+        .toolbar-btn.danger { color: var(--ios-red); font-weight: 600; opacity: 0.5; pointer-events: none; transition: 0.2s;}
         .toolbar-btn.danger.active { opacity: 1; pointer-events: auto; }
         .toolbar-title { font-size: 15px; font-weight: 600; color: var(--ios-text); }
-
         body.select-mode .header-actions { opacity: 0; pointer-events: none; }
         body.select-mode .filter-select { opacity: 0.5; pointer-events: none; }
 
-        /* НАСТОЯЩИЙ HAPTIC TOUCH (iOS Cloning Method) */
-        #haptic-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 9999; visibility: hidden;
-        }
-        #haptic-container.active { visibility: visible; pointer-events: auto; }
-        
-        .haptic-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        #haptic-container.active .haptic-overlay { opacity: 1; }
-
-        /* Клон карточки, который вылезает поверх размытия */
-        .haptic-card-clone {
-            position: absolute; margin: 0 !important;
-            transform-origin: center; transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-            pointer-events: none; /* Чтобы не нажималось */
-            box-shadow: 0 30px 60px rgba(0,0,0,0.2) !important;
-        }
-        
-        .ios-context-menu { 
-            position: absolute; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); 
-            border-radius: 14px; width: 250px; opacity: 0; transform: scale(0.8); transition: 0.25s cubic-bezier(0.32, 0.72, 0, 1); pointer-events: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        }
-        @media (prefers-color-scheme: dark) { .ios-context-menu { background: rgba(30, 30, 30, 0.75); } }
-        
-        .ios-context-menu.active { opacity: 1; transform: scale(1); pointer-events: auto; }
-        .ios-menu-item { padding: 14px 16px; font-size: 17px; color: var(--ios-text); border-bottom: 0.5px solid var(--ios-sep); display: flex; justify-content: space-between; font-weight: 400; cursor: pointer; align-items: center;}
-        .ios-menu-item:last-child { border-bottom: none; color: var(--red); }
-        .ios-menu-item:active { background: rgba(0,0,0,0.1); }
-
-        /* Модальные окна */
-        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--ios-bg); border-radius: 20px 20px 0 0; padding: 25px 16px 30px; transition: bottom 0.4s cubic-bezier(0.32, 0.72, 0, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; }
+        /* Модалки (Модальные окна) */
+        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 92vh; background: var(--ios-bg); border-radius: 20px 20px 0 0; padding: 25px 16px 40px; transition: bottom 0.4s var(--spring); z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); overflow-y: auto; }
         .modal.active { bottom: 0; }
-        .modal::before { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: var(--ios-hint); border-radius: 5px; opacity: 0.4; }
+        .modal::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: var(--ios-text-sec); border-radius: 5px; opacity: 0.4; }
+        
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px;}
-        .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;}
-        .close-btn { background: var(--ios-sep); border: none; color: var(--blue); font-size: 16px; font-weight: 600; padding: 6px 12px; border-radius: 16px; cursor: pointer;}
-        .input-group { background: var(--ios-card); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
-        .input-group input, .input-group textarea { width: 100%; border: none; background: transparent; color: var(--ios-text); font-size: 17px; padding: 14px 0; outline: none; font-family: inherit; }
-        .input-group textarea { resize: none; min-height: 80px; }
-        .divider { height: 0.5px; background: var(--ios-sep); margin: 0 -16px; }
-        .row-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; font-size: 17px;}
-        .time-input { background: var(--ios-sep); color: var(--ios-text); border: none; padding: 8px 12px; border-radius: 8px; font-size: 17px; font-weight: 500;}
-        .color-picker { display: flex; justify-content: space-between; padding: 14px 0; }
-        .color-circle { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s;}
-        .color-circle.active { border-color: var(--ios-text); transform: scale(1.1);}
+        .modal-header h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;}
+        .close-btn { background: var(--ios-sep); border: none; color: var(--ios-blue); font-size: 16px; font-weight: 600; padding: 6px 14px; border-radius: 16px; cursor: pointer;}
+        
+        .ios-group { background: var(--ios-card); border-radius: 14px; padding: 0 16px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
+        .ios-group-title { font-size: 13px; text-transform: uppercase; color: var(--ios-text-sec); font-weight: 600; margin: 0 0 8px 12px; display: block;}
+        
+        .ios-input-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 0.5px solid var(--ios-sep); }
+        .ios-input-row:last-child { border-bottom: none; }
+        .ios-input-row input[type="text"], .ios-input-row textarea { width: 100%; border: none; background: transparent; color: var(--ios-text); font-size: 17px; outline: none; }
+        .ios-input-row textarea { resize: none; min-height: 60px; padding-top: 4px;}
+        
+        .row-between { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 17px; }
+        .time-input { background: var(--ios-sep); color: var(--ios-text); border: none; padding: 8px 14px; border-radius: 8px; font-size: 17px; font-weight: 500;}
+        
+        /* Выбор цвета */
+        .color-picker { display: flex; justify-content: space-between; width: 100%; }
+        .color-circle { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s;}
+        .color-circle.active { border-color: var(--ios-text); transform: scale(1.15);}
+
+        /* Свитч (Toggle) */
         .switch { position: relative; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--ios-sep); border-radius: 31px; transition: .3s; }
+        .slider { position: absolute; inset: 0; background-color: var(--ios-sep); border-radius: 31px; transition: .3s; }
         .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: var(--green); }
+        input:checked + .slider { background-color: var(--ios-green); }
         input:checked + .slider:before { transform: translateX(20px); }
-        .save-btn { width: 100%; background: var(--blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s;}
-        .save-btn:active { opacity: 0.8; transform: scale(0.98); }
+
+        /* Напоминания (Пилюли) */
+        .pill-container { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; }
+        .pill-container::-webkit-scrollbar { display: none; }
+        .reminder-pill { padding: 8px 16px; border-radius: 20px; background: var(--ios-sep); color: var(--ios-text); font-size: 15px; font-weight: 500; white-space: nowrap; transition: 0.2s; border: none; cursor: pointer; }
+        .reminder-pill.active { background: var(--ios-blue); color: white; }
+
+        /* Подзадачи внутри модалки */
+        .subtask-edit-list { display: flex; flex-direction: column; }
+        .subtask-edit-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--ios-sep); }
+        .subtask-edit-row:last-child { border-bottom: none; }
+        .delete-sub-btn { background: var(--ios-red); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; line-height: 0; }
+        .add-sub-btn { color: var(--ios-blue); font-size: 17px; font-weight: 500; background: transparent; border: none; padding: 12px 0; display: flex; align-items: center; gap: 8px;}
+
+        .save-btn { width: 100%; background: var(--ios-blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,122,255,0.3);}
+        .save-btn:active { transform: scale(0.97); }
+
+        /* Календарь и Статистика (Возвращены) */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-top: 10px; padding: 0 10px;}
-        .cal-header { font-size: 13px; color: var(--ios-hint); font-weight: 600; margin-bottom: 8px;}
-        .cal-day { padding: 10px 0 16px 0; border-radius: 10px; font-size: 17px; font-weight: 400; position: relative; cursor: pointer; background: var(--ios-card); display: flex; flex-direction: column; align-items: center;}
-        .cal-day.empty { background: transparent; }
-        .cal-day.today { color: white; font-weight: 600; background: var(--blue); }
+        .cal-header { font-size: 13px; color: var(--ios-text-sec); font-weight: 600; margin-bottom: 8px;}
+        .cal-day { padding: 10px 0 16px 0; border-radius: 12px; font-size: 17px; font-weight: 500; position: relative; cursor: pointer; background: var(--ios-card); display: flex; flex-direction: column; align-items: center;}
+        .cal-day.empty { background: transparent; box-shadow: none; }
+        .cal-day.today { color: white; font-weight: 700; background: var(--ios-blue); }
         .cal-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 3px; position: absolute; bottom: 6px; left: 2px; right: 2px; max-width: 100%; }
         .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+        
         .stat-item { display: flex; justify-content: space-between; padding: 16px; background: var(--ios-card); border-radius: 12px; margin-bottom: 12px; font-size: 17px; font-weight: 500;}
-        .stat-val { font-weight: 600; color: var(--ios-hint); }
+        .stat-val { font-weight: 600; color: var(--ios-text-sec); }
+
+        /* Haptic Touch */
+        #haptic-container { position: fixed; inset: 0; pointer-events: none; z-index: 9999; visibility: hidden; }
+        #haptic-container.active { visibility: visible; pointer-events: auto; }
+        .haptic-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); opacity: 0; transition: 0.3s; }
+        #haptic-container.active .haptic-overlay { opacity: 1; }
+        .haptic-card-clone { position: absolute; margin: 0 !important; transform-origin: center; transition: transform 0.25s var(--spring); pointer-events: none; box-shadow: 0 30px 60px rgba(0,0,0,0.2) !important; }
+        
+        .ios-context-menu { 
+            position: absolute; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); 
+            border-radius: 14px; width: 250px; opacity: 0; transform: scale(0.8); transition: 0.25s var(--spring); pointer-events: none; overflow: hidden;
+        }
+        @media (prefers-color-scheme: dark) { .ios-context-menu { background: rgba(30, 30, 30, 0.85); } }
+        .ios-context-menu.active { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .ios-menu-item { padding: 14px 16px; font-size: 17px; color: var(--ios-text); border-bottom: 0.5px solid var(--ios-sep); display: flex; justify-content: space-between; cursor: pointer;}
+        .ios-menu-item:last-child { border-bottom: none; color: var(--ios-red); }
     </style>
 </head>
 <body>
@@ -232,10 +241,9 @@
         </div>
     </div>
 
-    <!-- Haptic Touch Контейнер (Apple Clone Method) -->
+    <!-- Haptic Touch Меню -->
     <div id="haptic-container">
         <div class="haptic-overlay" onclick="closeHapticMenu()"></div>
-        <!-- Клон карточки появится здесь скриптом -->
         <div class="ios-context-menu" id="ios-menu">
             <div class="ios-menu-item" onclick="enterSelectModeFromMenu()">Выбрать несколько <span>☑️</span></div>
             <div class="ios-menu-item" onclick="moveTomorrow()">На завтра <span>➡️</span></div>
@@ -243,6 +251,60 @@
         </div>
     </div>
 
+    <!-- Модалка Создания/Редактирования -->
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <h2 id="modal-title">Новое дело</h2>
+            <button class="close-btn" onclick="closeAllModals()">Отмена</button>
+        </div>
+
+        <div class="ios-group">
+            <div class="ios-input-row"><input type="text" id="title" placeholder="Название (например, Тренировка)" autocomplete="off"></div>
+            <div class="ios-input-row"><textarea id="comment" placeholder="Примечание..."></textarea></div>
+            <div class="ios-input-row">
+                <div class="color-picker" id="color-picker">
+                    <div class="color-circle active" data-color="ios-blue" style="background: var(--ios-blue)" onclick="selectColor('ios-blue')"></div>
+                    <div class="color-circle" data-color="ios-red" style="background: var(--ios-red)" onclick="selectColor('ios-red')"></div>
+                    <div class="color-circle" data-color="ios-green" style="background: var(--ios-green)" onclick="selectColor('ios-green')"></div>
+                    <div class="color-circle" data-color="ios-orange" style="background: var(--ios-orange)" onclick="selectColor('ios-orange')"></div>
+                    <div class="color-circle" data-color="ios-purple" style="background: var(--ios-purple)" onclick="selectColor('ios-purple')"></div>
+                </div>
+            </div>
+        </div>
+
+        <span class="ios-group-title">Дата и время</span>
+        <div class="ios-group">
+            <div class="ios-input-row"><input type="text" id="dates-picker" placeholder="Выбрать дату"></div>
+            <div class="ios-input-row">
+                <div class="row-between"><span>Весь день</span><label class="switch"><input type="checkbox" id="all-day-toggle" onchange="toggleTime()"><span class="slider"></span></label></div>
+            </div>
+            <div class="ios-input-row" id="time-wrapper">
+                <div class="row-between"><span>Время</span><div style="display:flex; gap: 8px;"><input type="time" id="time-picker" class="time-input" value="09:00" onchange="autoAdjustEnd()"> <input type="time" id="time-picker-end" class="time-input" value="10:00"></div></div>
+            </div>
+        </div>
+
+        <span class="ios-group-title">Напоминания</span>
+        <div class="ios-group" style="background: transparent; padding: 0; box-shadow: none;">
+            <div class="pill-container" id="reminders-container">
+                <button class="reminder-pill" data-val="0" onclick="toggleReminder(this)">В момент</button>
+                <button class="reminder-pill" data-val="15" onclick="toggleReminder(this)">За 15 мин</button>
+                <button class="reminder-pill" data-val="60" onclick="toggleReminder(this)">За 1 час</button>
+                <button class="reminder-pill" data-val="1440" onclick="toggleReminder(this)">За 1 день</button>
+            </div>
+        </div>
+
+        <span class="ios-group-title">Подзадачи</span>
+        <div class="ios-group">
+            <div class="subtask-edit-list" id="subtask-edit-list"></div>
+            <div class="ios-input-row" style="border: none;">
+                <button class="add-sub-btn" onclick="addSubtaskRow()"><span>+</span> Добавить пункт</button>
+            </div>
+        </div>
+
+        <button class="save-btn" id="save-btn" onclick="saveEvent()">Добавить</button>
+    </div>
+
+    <!-- Календарь -->
     <div class="modal" id="calendar-modal">
         <div class="modal-header">
             <h2 id="month-title">Календарь</h2>
@@ -251,51 +313,13 @@
         <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
+    <!-- Статистика -->
     <div class="modal" id="stats-modal">
         <div class="modal-header">
             <h2 id="stats-title">Статистика</h2>
             <button class="close-btn" onclick="closeAllModals()">Готово</button>
         </div>
         <div id="stats-content"></div>
-    </div>
-
-    <div class="modal" id="modal">
-        <div class="modal-header">
-            <h2 id="modal-title">Новое дело</h2>
-            <button class="close-btn" onclick="closeAllModals()">Отмена</button>
-        </div>
-        <div class="input-group">
-            <input type="text" id="title" placeholder="Название (например, Учеба)" autocomplete="off">
-            <div class="divider"></div>
-            <div class="color-picker" id="color-picker">
-                <div class="color-circle active" data-color="blue" style="background: var(--blue)" onclick="selectColor('blue')"></div>
-                <div class="color-circle" data-color="red" style="background: var(--red)" onclick="selectColor('red')"></div>
-                <div class="color-circle" data-color="green" style="background: var(--green)" onclick="selectColor('green')"></div>
-                <div class="color-circle" data-color="orange" style="background: var(--orange)" onclick="selectColor('orange')"></div>
-                <div class="color-circle" data-color="purple" style="background: var(--purple)" onclick="selectColor('purple')"></div>
-            </div>
-            <div class="divider"></div>
-            <textarea id="comment" placeholder="Примечание..."></textarea>
-        </div>
-        <div class="input-group">
-            <input type="text" id="dates-picker" placeholder="Выбрать дату">
-            <div class="divider"></div>
-            <div class="row-item">
-                <span>Весь день</span>
-                <label class="switch"><input type="checkbox" id="all-day-toggle" onchange="toggleTime()"><span class="slider"></span></label>
-            </div>
-            <div id="time-wrapper">
-                <div class="divider"></div>
-                <div class="row-item">
-                    <span>Время (От — До)</span>
-                    <div style="display:flex; gap: 8px;">
-                        <input type="time" id="time-picker" class="time-input" value="09:00" onchange="autoAdjustEnd()"> 
-                        <input type="time" id="time-picker-end" class="time-input" value="10:00">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <button class="save-btn" id="save-btn" onclick="saveEvent()">Добавить</button>
     </div>
 
     <script>
@@ -305,10 +329,11 @@
         const userId = tg.initDataUnsafe?.user?.id || '123456789';
         let allEventsCache = [];
         let datePickerInstance;
-        let selectedColor = 'blue';
+        let selectedColor = 'ios-blue';
         let editingEventId = null;
         let currentFilter = 'ALL';
         
+        // Переменные для режима множественного выбора
         let isSelectMode = false;
         let selectedIds = new Set();
 
@@ -316,23 +341,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             datePickerInstance = flatpickr("#dates-picker", { mode: "multiple", dateFormat: "Y-m-d", locale: "ru", disableMobile: "true" });
+            loadEvents();
         });
 
-        function autoAdjustEnd() {
-            const startVal = document.getElementById('time-picker').value;
-            if (startVal) {
-                const [h, m] = startVal.split(':');
-                let endH = parseInt(h) + 1;
-                document.getElementById('time-picker-end').value = `${String(endH % 24).padStart(2, '0')}:${m}`;
-            }
-        }
-
-        function toggleTime() { document.getElementById('time-wrapper').style.display = document.getElementById('all-day-toggle').checked ? 'none' : 'block'; }
-        function selectColor(color) { tg.HapticFeedback.selectionChanged(); selectedColor = color; document.querySelectorAll('.color-circle').forEach(el => el.classList.toggle('active', el.dataset.color === color)); }
-
-        const months = ["Янв", "Фев", "Марта", "Апр", "Мая", "Июня", "Июля", "Авг", "Сент", "Окт", "Нояб", "Дек"];
-        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
-
+        // Загрузка
         async function loadEvents() {
             try {
                 const res = await fetch(`/api/events?userId=${userId}`);
@@ -342,17 +354,19 @@
             } catch (e) { console.error(e); }
         }
 
-        function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : ''; }
+        function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
 
         function updateFilterOptions() {
             const select = document.getElementById('event-filter');
             const uniqueTitles = [...new Set(allEventsCache.map(e => e.title))];
-            let optionsHtml = '<option value="ALL">Все дела</option>';
-            uniqueTitles.forEach(t => optionsHtml += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`);
-            select.innerHTML = optionsHtml; select.value = currentFilter;
+            let html = '<option value="ALL">Все дела</option>';
+            uniqueTitles.forEach(t => html += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`);
+            select.innerHTML = html; select.value = currentFilter;
         }
-
         function onFilterChange() { currentFilter = document.getElementById('event-filter').value; if(isSelectMode) toggleSelectMode(false); renderEvents(); }
+
+        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+        const months = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
 
         function formatDayTitle(dateString) {
             const [y, m, d] = dateString.split('-');
@@ -364,69 +378,84 @@
             return `${days[targetDate.getDay()]}, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
         }
 
+        // Рендер главного экрана
         function renderEvents() {
             const slider = document.getElementById('slider-container');
-            const filteredEvents = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
+            const filtered = allEventsCache.filter(ev => currentFilter === 'ALL' || ev.title === currentFilter);
 
-            if (filteredEvents.length === 0) {
+            if (filtered.length === 0) {
                 slider.innerHTML = `<div class="day-page"><div class="empty-state">Нет запланированных дел.</div></div>`;
                 return;
             }
 
-            const groupedEvents = {};
-            filteredEvents.forEach(ev => {
-                const dateKey = getLocalDateString(new Date(ev.event_date)); 
-                if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
-                groupedEvents[dateKey].push(ev);
+            const grouped = {};
+            filtered.forEach(ev => {
+                const dKey = getLocalDateString(new Date(ev.event_date)); 
+                if (!grouped[dKey]) grouped[dKey] = [];
+                grouped[dKey].push(ev);
             });
 
             slider.innerHTML = '';
-            Object.keys(groupedEvents).sort().forEach((dateKey) => {
-                let pageHTML = `<div class="day-page" id="page-${dateKey}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
-                groupedEvents[dateKey].sort((a, b) => {
-                    if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
-                    if (a.is_all_day && !b.is_all_day) return -1;
-                    if (!a.is_all_day && b.is_all_day) return 1;
-                    return new Date(a.event_date) - new Date(b.event_date);
-                });
+            Object.keys(grouped).sort().forEach(dateKey => {
+                let html = `<div class="day-page" id="page-${dateKey}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
+                grouped[dateKey].sort((a,b) => (a.is_completed === b.is_completed ? new Date(a.event_date) - new Date(b.event_date) : a.is_completed ? 1 : -1));
                     
-                groupedEvents[dateKey].forEach(ev => {
-                    let timeHTML = ev.is_all_day ? `<span class="event-time all-day">Весь день</span>` : 
+                grouped[dateKey].forEach(ev => {
+                    const timeHTML = ev.is_all_day ? `<span class="event-time all-day">Весь день</span>` : 
                         `<span class="event-time">${new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}${ev.end_date ? ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : ''}</span>`;
                     
                     const isDone = ev.is_completed ? 'is-completed' : '';
                     const checkClass = ev.is_completed ? 'done' : '';
                     const isSelected = selectedIds.has(ev.id) ? 'selected' : '';
+                    const hasReminders = ev.notify_prefs && ev.notify_prefs.length > 0 && ev.notify_prefs !== '[]' ? `<span class="reminder-icon">🔔</span>` : '';
 
-                    pageHTML += `
+                    // Рендер подзадач внутри карточки
+                    let subtasksHtml = '';
+                    const subs = typeof ev.subtasks === 'string' ? JSON.parse(ev.subtasks) : ev.subtasks;
+                    if (subs && subs.length > 0) {
+                        subtasksHtml = `<div class="card-subtasks">`;
+                        subs.forEach(sub => {
+                            const subDone = sub.is_completed ? 'done' : '';
+                            subtasksHtml += `
+                                <div class="card-subtask-item ${subDone}" onclick="toggleSubtask(event, ${ev.id}, '${sub.id}', ${!sub.is_completed})">
+                                    <div class="sub-check"></div>
+                                    <span>${escapeHtml(sub.title)}</span>
+                                </div>
+                            `;
+                        });
+                        subtasksHtml += `</div>`;
+                    }
+
+                    html += `
                         <div class="event-card ${isDone} ${isSelected}" id="card-${ev.id}"
-                             ontouchstart="handleTouchStartLogic(event, ${ev.id})"
-                             ontouchmove="handleTouchMoveLogic(event)"
-                             ontouchend="handleTouchEndLogic(event)"
+                             ontouchstart="handleTouchStart(event, ${ev.id})"
+                             ontouchmove="handleTouchMove(event)"
+                             ontouchend="handleTouchEnd(event)"
                              onclick="handleCardClick(event, ${ev.id})">
                              
                             <div class="select-circle" id="select-${ev.id}"></div>
-                            <div class="color-strip" style="background: var(--${ev.color || 'blue'})"></div>
+                            <div class="color-strip" style="background: var(--${ev.color || 'ios-blue'})"></div>
                             
                             <div class="event-card-inner">
                                 <div class="complete-checkbox ${checkClass}" onclick="toggleComplete(event, ${ev.id}, ${!ev.is_completed})"></div>
                                 <div class="event-content">
-                                    <div class="event-header"><span class="event-title">${escapeHtml(ev.title)}</span>${timeHTML}</div>
+                                    <div class="event-header"><span class="event-title">${escapeHtml(ev.title)}</span><div style="display:flex; gap:6px; align-items:center;">${hasReminders}${timeHTML}</div></div>
                                     ${ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : ''}
+                                    ${subtasksHtml}
                                 </div>
                             </div>
                         </div>
                     `;
                 });
-                pageHTML += `</div>`;
-                slider.innerHTML += pageHTML;
+                html += `</div>`;
+                slider.innerHTML += html;
             });
         }
 
+        // Взаимодействия
         async function toggleComplete(e, id, status) {
             e.stopPropagation(); 
             if (isSelectMode) return; 
-            
             tg.HapticFeedback.impactOccurred('medium');
             const ev = allEventsCache.find(x => x.id === id);
             if(ev) ev.is_completed = status;
@@ -434,116 +463,20 @@
             await fetch(`/api/events/${id}/toggle`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isCompleted: status }) });
         }
 
-        /* МАГИЯ APPLE HAPTIC TOUCH (МЕТОД КЛОНИРОВАНИЯ) */
-        let touchStartX = 0, touchStartY = 0;
-        let hapticTimer = null;
-        let hapticTargetId = null;
-
-        window.handleTouchStartLogic = function(e, id) {
-            if (isSelectMode) return; 
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-
-            hapticTimer = setTimeout(() => {
-                activateHapticMenu(id);
-            }, 400); 
-        };
-
-        window.handleTouchMoveLogic = function(e) {
-            if (hapticTargetId || isSelectMode) return;
-            let diffX = Math.abs(e.touches[0].clientX - touchStartX);
-            let diffY = Math.abs(e.touches[0].clientY - touchStartY);
-            if (diffX > 10 || diffY > 10) clearTimeout(hapticTimer);
-        };
-
-        window.handleTouchEndLogic = function(e) {
+        async function toggleSubtask(e, eventId, subtaskId, status) {
+            e.stopPropagation();
             if (isSelectMode) return;
-            clearTimeout(hapticTimer);
-        };
-
-        /* Меню Haptic Touch */
-        function activateHapticMenu(id) {
-            tg.HapticFeedback.impactOccurred('heavy');
-            hapticTargetId = id;
-            
-            const originalCard = document.getElementById(`card-${id}`);
-            const rect = originalCard.getBoundingClientRect();
-            
-            // 1. Прячем оригинал
-            originalCard.style.opacity = '0';
-            
-            // 2. Создаем клон для 3D эффекта
-            const clone = originalCard.cloneNode(true);
-            clone.id = 'haptic-clone';
-            clone.className = originalCard.className + ' haptic-card-clone';
-            clone.style.top = `${rect.top}px`;
-            clone.style.left = `${rect.left}px`;
-            clone.style.width = `${rect.width}px`;
-            clone.style.height = `${rect.height}px`;
-            clone.style.opacity = '1';
-            clone.style.transform = 'scale(1)'; // начальное состояние
-            
-            const container = document.getElementById('haptic-container');
-            const oldClone = document.getElementById('haptic-clone');
-            if (oldClone) oldClone.remove();
-            
-            // Вставляем клон в DOM перед меню
-            container.insertBefore(clone, document.getElementById('ios-menu'));
-            
-            // 3. Вычисляем позицию меню
-            const menu = document.getElementById('ios-menu');
-            const scaledOffset = (rect.height * 1.05 - rect.height) / 2; // смещение из-за увеличения
-            let topPos = rect.bottom + scaledOffset + 12;
-            
-            if(topPos + 170 > window.innerHeight) {
-                topPos = rect.top - scaledOffset - 170; // если снизу нет места, кидаем меню наверх
-            }
-            
-            menu.style.top = `${topPos}px`;
-            menu.style.left = `${Math.max(16, rect.left)}px`;
-            
-            container.classList.add('active');
-            
-            // 4. Запускаем анимацию увеличения клона
-            setTimeout(() => {
-                clone.style.transform = 'scale(1.05)';
-                menu.classList.add('active');
-            }, 10);
+            tg.HapticFeedback.selectionChanged();
+            const ev = allEventsCache.find(x => x.id === eventId);
+            let subs = typeof ev.subtasks === 'string' ? JSON.parse(ev.subtasks) : (ev.subtasks || []);
+            const sub = subs.find(s => s.id == subtaskId);
+            if (sub) sub.is_completed = status;
+            ev.subtasks = subs;
+            renderEvents();
+            await fetch(`/api/events/${eventId}/subtasks`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subtasks: subs }) });
         }
 
-        window.closeHapticMenu = function() {
-            const container = document.getElementById('haptic-container');
-            const menu = document.getElementById('ios-menu');
-            const clone = document.getElementById('haptic-clone');
-            
-            container.classList.remove('active');
-            menu.classList.remove('active');
-            
-            if (clone) clone.style.transform = 'scale(1)'; // Сдуваем клон обратно
-            
-            setTimeout(() => {
-                if (hapticTargetId) {
-                    const originalCard = document.getElementById(`card-${hapticTargetId}`);
-                    if (originalCard) originalCard.style.opacity = '1'; // Возвращаем оригинал
-                    hapticTargetId = null;
-                }
-                if (clone) clone.remove();
-            }, 250); // Ждем окончания CSS анимации
-        };
-
-        window.handleCardClick = function(e, id) {
-            if (hapticTargetId) return; 
-            if (isSelectMode) {
-                tg.HapticFeedback.selectionChanged();
-                if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
-                updateBulkActionBar();
-                renderEvents(); 
-                return;
-            }
-            openModal(id);
-        };
-
-        /* ЛОГИКА SELECT MODE (Режим Редактирования) */
+        /* --- ЛОГИКА SELECT MODE (Режим Выбора/Удаления) --- */
         function toggleSelectMode(force) {
             isSelectMode = force !== undefined ? force : !isSelectMode;
             document.body.classList.toggle('select-mode', isSelectMode);
@@ -585,7 +518,6 @@
         window.enterSelectModeFromMenu = function() {
             const id = hapticTargetId;
             closeHapticMenu();
-            // Ждем пока меню закроется, затем включаем режим выбора
             setTimeout(() => {
                 toggleSelectMode(true);
                 selectedIds.add(id);
@@ -594,19 +526,75 @@
             }, 250);
         };
 
-        window.deleteFromMenu = async function() { 
-            const id = hapticTargetId;
-            closeHapticMenu();
-            setTimeout(async () => {
-                tg.HapticFeedback.impactOccurred('heavy');
-                await fetch(`/api/events/${id}`, { method: 'DELETE' });
-                loadEvents();
+        // Haptic Меню
+        let touchStartX = 0, touchStartY = 0, hapticTimer = null, hapticTargetId = null;
+        window.handleTouchStart = function(e, id) {
+            if (isSelectMode) return;
+            touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+            hapticTimer = setTimeout(() => activateHapticMenu(id), 400); 
+        };
+        window.handleTouchMove = function(e) {
+            if (hapticTargetId || isSelectMode) return;
+            if (Math.abs(e.touches[0].clientX - touchStartX) > 10 || Math.abs(e.touches[0].clientY - touchStartY) > 10) clearTimeout(hapticTimer);
+        };
+        window.handleTouchEnd = function() { if (isSelectMode) return; clearTimeout(hapticTimer); };
+
+        function activateHapticMenu(id) {
+            tg.HapticFeedback.impactOccurred('heavy');
+            hapticTargetId = id;
+            const original = document.getElementById(`card-${id}`);
+            const rect = original.getBoundingClientRect();
+            
+            original.style.opacity = '0';
+            const clone = original.cloneNode(true);
+            clone.id = 'haptic-clone'; clone.className = original.className + ' haptic-card-clone';
+            clone.style.top = `${rect.top}px`; clone.style.left = `${rect.left}px`; clone.style.width = `${rect.width}px`; clone.style.height = `${rect.height}px`; clone.style.opacity = '1';
+            
+            const container = document.getElementById('haptic-container');
+            const menu = document.getElementById('ios-menu');
+            container.insertBefore(clone, menu);
+            
+            let topPos = rect.bottom + 10;
+            if(topPos + 170 > window.innerHeight) topPos = rect.top - 170;
+            
+            menu.style.top = `${topPos}px`; menu.style.left = `${Math.max(16, rect.left)}px`;
+            container.classList.add('active');
+            
+            setTimeout(() => { clone.style.transform = 'scale(1.03)'; menu.classList.add('active'); }, 10);
+        }
+
+        window.closeHapticMenu = function() {
+            const container = document.getElementById('haptic-container');
+            const menu = document.getElementById('ios-menu');
+            const clone = document.getElementById('haptic-clone');
+            
+            container.classList.remove('active'); menu.classList.remove('active');
+            if (clone) clone.style.transform = 'scale(1)'; 
+            
+            setTimeout(() => {
+                if (hapticTargetId) { const orig = document.getElementById(`card-${hapticTargetId}`); if (orig) orig.style.opacity = '1'; hapticTargetId = null; }
+                if (clone) clone.remove();
             }, 250);
+        };
+
+        window.handleCardClick = function(e, id) { 
+            if (hapticTargetId) return; 
+            if (isSelectMode) {
+                tg.HapticFeedback.selectionChanged();
+                if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+                updateBulkActionBar(); renderEvents(); 
+                return;
+            }
+            openModal(id); 
+        };
+
+        window.deleteFromMenu = async function() { 
+            const id = hapticTargetId; closeHapticMenu();
+            setTimeout(async () => { tg.HapticFeedback.impactOccurred('heavy'); await fetch(`/api/events/${id}`, { method: 'DELETE' }); loadEvents(); }, 250);
         };
         
         window.moveTomorrow = async function() {
-            const id = hapticTargetId;
-            closeHapticMenu();
+            const id = hapticTargetId; closeHapticMenu();
             setTimeout(async () => {
                 tg.HapticFeedback.notificationOccurred('success');
                 const ev = allEventsCache.find(e => e.id === id);
@@ -618,12 +606,36 @@
             }, 250);
         };
 
-        /* Модальные окна */
+        // --- МОДАЛКА (Редактирование/Создание) ---
+        function toggleTime() { document.getElementById('time-wrapper').style.display = document.getElementById('all-day-toggle').checked ? 'none' : 'flex'; }
+        function autoAdjustEnd() {
+            const startVal = document.getElementById('time-picker').value;
+            if (startVal) { const [h, m] = startVal.split(':'); document.getElementById('time-picker-end').value = `${String((parseInt(h) + 1) % 24).padStart(2, '0')}:${m}`; }
+        }
+        function selectColor(color) { tg.HapticFeedback.selectionChanged(); selectedColor = color; document.querySelectorAll('.color-circle').forEach(el => el.classList.toggle('active', el.dataset.color === color)); }
+        
+        function toggleReminder(btn) { tg.HapticFeedback.selectionChanged(); btn.classList.toggle('active'); }
+
+        function addSubtaskRow(title = '', isDone = false, id = null) {
+            const list = document.getElementById('subtask-edit-list');
+            const row = document.createElement('div');
+            row.className = 'subtask-edit-row';
+            const subId = id || Date.now() + Math.floor(Math.random()*1000);
+            row.innerHTML = `
+                <button class="delete-sub-btn" onclick="this.parentElement.remove()">-</button>
+                <input type="text" class="subtask-input" data-id="${subId}" value="${escapeHtml(title)}" placeholder="Название подзадачи" style="width:100%; border:none; background:transparent; font-size:17px; outline:none; color:var(--ios-text)">
+                <input type="checkbox" class="subtask-check" style="display:none" ${isDone ? 'checked' : ''}>
+            `;
+            list.appendChild(row);
+        }
+
         function closeAllModals() {
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
             document.body.classList.remove('modal-open');
             datePickerInstance.clear();
             document.getElementById('title').value = ''; document.getElementById('comment').value = '';
+            document.getElementById('subtask-edit-list').innerHTML = '';
+            document.querySelectorAll('.reminder-pill').forEach(p => p.classList.remove('active'));
             editingEventId = null;
         }
 
@@ -631,26 +643,36 @@
             tg.HapticFeedback.impactOccurred('medium');
             document.body.classList.add('modal-open');
             editingEventId = id;
+            document.getElementById('subtask-edit-list').innerHTML = '';
+            document.querySelectorAll('.reminder-pill').forEach(p => p.classList.remove('active'));
+
             if (id !== null) {
                 const ev = allEventsCache.find(e => e.id === id);
                 document.getElementById('modal-title').textContent = 'Редактировать'; 
                 document.getElementById('save-btn').textContent = 'Сохранить';
                 document.getElementById('title').value = ev.title; 
                 document.getElementById('comment').value = ev.comment || '';
-                selectColor(ev.color || 'blue');
+                selectColor(ev.color || 'ios-blue');
                 
                 const d = new Date(ev.event_date);
                 datePickerInstance.set('mode', 'single'); datePickerInstance.setDate(getLocalDateString(d));
                 document.getElementById('all-day-toggle').checked = ev.is_all_day; toggleTime();
                 if (!ev.is_all_day) {
                     document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
-                    if (ev.end_date) {
-                        const endD = new Date(ev.end_date); document.getElementById('time-picker-end').value = String(endD.getHours()).padStart(2, '0') + ":" + String(endD.getMinutes()).padStart(2, '0');
-                    } else autoAdjustEnd();
+                    if (ev.end_date) { const endD = new Date(ev.end_date); document.getElementById('time-picker-end').value = String(endD.getHours()).padStart(2, '0') + ":" + String(endD.getMinutes()).padStart(2, '0'); }
                 }
+
+                // Восстановление подзадач
+                const subs = typeof ev.subtasks === 'string' ? JSON.parse(ev.subtasks) : (ev.subtasks || []);
+                subs.forEach(s => addSubtaskRow(s.title, s.is_completed, s.id));
+
+                // Восстановление напоминаний
+                const prefs = typeof ev.notify_prefs === 'string' ? JSON.parse(ev.notify_prefs) : (ev.notify_prefs || []);
+                prefs.forEach(val => { const btn = document.querySelector(`.reminder-pill[data-val="${val}"]`); if(btn) btn.classList.add('active'); });
+
             } else {
                 document.getElementById('modal-title').textContent = 'Новое дело'; document.getElementById('save-btn').textContent = 'Добавить';
-                datePickerInstance.set('mode', 'multiple'); selectColor('blue');
+                datePickerInstance.set('mode', 'multiple'); selectColor('ios-blue');
                 document.getElementById('all-day-toggle').checked = false; document.getElementById('time-picker').value = "09:00"; document.getElementById('time-picker-end').value = "10:00"; toggleTime();
             }
             document.getElementById('modal').classList.add('active');
@@ -660,15 +682,22 @@
             const title = document.getElementById('title').value;
             const dates = datePickerInstance.selectedDates;
             const isAllDay = document.getElementById('all-day-toggle').checked;
-            const timeVal = document.getElementById('time-picker').value;
-            const timeEndVal = document.getElementById('time-picker-end').value;
 
             if (!title || dates.length === 0) return tg.showAlert('Укажите название и дату');
             document.getElementById('save-btn').textContent = 'Сохранение...';
 
+            const subInputs = document.querySelectorAll('.subtask-input');
+            const subChecks = document.querySelectorAll('.subtask-check');
+            const parsedSubtasks = Array.from(subInputs).map((input, i) => ({ id: input.dataset.id, title: input.value.trim(), is_completed: subChecks[i].checked })).filter(s => s.title !== '');
+
+            const activeReminders = Array.from(document.querySelectorAll('.reminder-pill.active')).map(btn => parseInt(btn.dataset.val));
+
+            const basePayload = { title, comment: document.getElementById('comment').value, isAllDay, color: selectedColor, subtasks: parsedSubtasks, notifyPrefs: activeReminders };
+
+            const timeVal = document.getElementById('time-picker').value;
+            const timeEndVal = document.getElementById('time-picker-end').value;
             const [h, m] = isAllDay ? [0, 0] : timeVal.split(':');
             const [eh, em] = isAllDay ? [0, 0] : timeEndVal.split(':');
-            const basePayload = { title, notifyPrefs: [], comment: document.getElementById('comment').value, isAllDay, color: selectedColor, subtasks: [] };
 
             if (editingEventId !== null) {
                 const d = new Date(dates[0]); d.setHours(parseInt(h), parseInt(m), 0, 0);
@@ -685,7 +714,8 @@
             tg.HapticFeedback.notificationOccurred('success');
             closeAllModals(); loadEvents();
         }
-
+        
+        // --- ВОССТАНОВЛЕННЫЙ КАЛЕНДАРЬ ---
         function openCalendarModal() { 
             tg.HapticFeedback.impactOccurred('light'); 
             const grid = document.getElementById('calendar-grid');
@@ -707,7 +737,7 @@
                 const dayEvents = allEventsCache.filter(e => getLocalDateString(new Date(e.event_date)) === localDateStr);
                 
                 let dotsHtml = '<div class="cal-dots">';
-                dayEvents.slice(0, 4).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
+                dayEvents.slice(0, 4).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'ios-blue'})"></div>`; });
                 dotsHtml += '</div>';
                 html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${localDateStr}')">${d}${dotsHtml}</div>`;
             }
@@ -723,6 +753,7 @@
             else tg.showAlert('На эту дату нет дел.');
         }
 
+        // --- ВОССТАНОВЛЕННАЯ СТАТИСТИКА ---
         function openStatsModal() { 
             tg.HapticFeedback.impactOccurred('light'); 
             const now = new Date();
@@ -730,7 +761,7 @@
             const stats = {};
             currentMonthEvents.forEach(e => { stats[e.title] = (stats[e.title] || 0) + 1; });
             
-            let html = `<p style="color:var(--ios-hint); margin-top:0;">Сводка за этот месяц:</p>`;
+            let html = `<p style="color:var(--ios-text-sec); margin-top:0;">Сводка за этот месяц:</p>`;
             if (Object.keys(stats).length === 0) html += `<div class="empty-state">Нет данных</div>`;
             
             Object.entries(stats).sort((a,b) => b[1]-a[1]).forEach(([title, count]) => {
@@ -740,8 +771,6 @@
             document.body.classList.add('modal-open');
             document.getElementById('stats-modal').classList.add('active'); 
         }
-
-        loadEvents();
     </script>
 </body>
 </html>
