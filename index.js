@@ -44,56 +44,73 @@ bot.start((ctx) => {
     });
 });
 
-// НОВОЕ: ИНЛАЙН-РЕЖИМ (Шеринг планов в других чатах)
+// Вспомогательная функция для безопасного текста в ТГ
+const escapeHtmlBot = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// ИНЛАЙН-РЕЖИМ (Шеринг планов в других чатах)
 bot.on('inline_query', async (ctx) => {
-    const userId = ctx.from.id;
     try {
-        // Получаем все будущие события
-        const { rows: events } = await pool.query('SELECT * FROM events WHERE user_id = $1 AND event_date >= CURRENT_DATE ORDER BY event_date ASC', [userId]);
+        const userId = ctx.from.id;
         
-        if (events.length === 0) {
+        // Получаем все дела пользователя
+        const { rows: events } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
+        
+        if (!events || events.length === 0) {
             return ctx.answerInlineQuery([{
-                type: 'article', id: '1', title: 'Нет планов', description: 'У вас пока нет запланированных дел',
+                type: 'article', id: 'empty', title: 'Нет планов', description: 'Ваш график пуст',
                 input_message_content: { message_text: 'Я абсолютно свободен! Никаких планов нет. 😎' }
             }], { cache_time: 0 });
         }
 
-        // Фильтруем на сегодня и завтра
-        const todayStr = new Date().toDateString();
-        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = tomorrow.toDateString();
+        // Вычисляем сегодняшнюю и завтрашнюю даты с учетом часового пояса сервера
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
+        // Переводим в формат YYYY-MM-DD
+        const getIsoDate = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const todayStr = getIsoDate(today);
+        const tomorrowStr = getIsoDate(tomorrow);
+
+        // Фильтруем дела
+        const todayEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === todayStr);
+        const tomorrowEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === tomorrowStr);
+
+        // Формируем красивое сообщение
         const formatEvents = (evs, title) => {
-            if (evs.length === 0) return `На ${title.toLowerCase()} у меня нет планов!`;
-            let txt = `📅 **Мой план на ${title.toLowerCase()}:**\n\n`;
+            if (evs.length === 0) return `На ${title.toLowerCase()} у меня нет планов! 🏖`;
+            let txt = `📅 <b>Мой план на ${title.toLowerCase()}:</b>\n\n`;
             evs.forEach(ev => {
-                const t = ev.is_all_day ? '(Весь день)' : new Date(ev.event_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+                let timeStr = ev.is_all_day ? '(Весь день)' : new Date(ev.event_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+                if (!ev.is_all_day && ev.end_date) {
+                    timeStr += ` - ${new Date(ev.end_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}`;
+                }
                 const emoji = ev.is_completed ? '✅' : '🔹';
-                txt += `${emoji} ${ev.title} ${t}\n`;
+                txt += `${emoji} ${escapeHtmlBot(ev.title)} <i>${timeStr}</i>\n`;
             });
             return txt;
         };
-
-        const todayEvents = events.filter(e => new Date(e.event_date).toDateString() === todayStr);
-        const tomorrowEvents = events.filter(e => new Date(e.event_date).toDateString() === tomorrowStr);
 
         const results = [
             {
                 type: 'article', id: 'today',
                 title: 'План на сегодня',
                 description: `Дел: ${todayEvents.length}`,
-                input_message_content: { message_text: formatEvents(todayEvents, 'Сегодня'), parse_mode: 'Markdown' }
+                input_message_content: { message_text: formatEvents(todayEvents, 'Сегодня'), parse_mode: 'HTML' }
             },
             {
                 type: 'article', id: 'tomorrow',
                 title: 'План на завтра',
                 description: `Дел: ${tomorrowEvents.length}`,
-                input_message_content: { message_text: formatEvents(tomorrowEvents, 'Завтра'), parse_mode: 'Markdown' }
+                input_message_content: { message_text: formatEvents(tomorrowEvents, 'Завтра'), parse_mode: 'HTML' }
             }
         ];
 
+        // Отправляем результат (cache_time: 0 гарантирует, что данные всегда свежие)
         return ctx.answerInlineQuery(results, { cache_time: 0 });
-    } catch (e) { console.error('Ошибка инлайн-режима:', e); }
+    } catch (e) { 
+        console.error('Ошибка инлайн-режима:', e); 
+    }
 });
 
 bot.launch();
