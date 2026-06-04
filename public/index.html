@@ -22,82 +22,46 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: 0; overscroll-behavior-y: none;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; overscroll-behavior-y: none; }
 
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 20px 10px; background: var(--bg-color); position: sticky; top: 0; z-index: 10;
-        }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 10px; background: var(--bg-color); position: sticky; top: 0; z-index: 10; }
         .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
         
-        .add-btn {
-            background: var(--accent-color); color: var(--accent-text);
-            border: none; width: 36px; height: 36px; border-radius: 18px;
-            font-size: 24px; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3); transition: transform 0.1s;
-        }
+        .add-btn { background: var(--accent-color); color: var(--accent-text); border: none; width: 36px; height: 36px; border-radius: 18px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3); transition: 0.1s; }
         .add-btn:active { transform: scale(0.9); }
 
         .events-container { padding: 0 20px 100px; }
         .empty-state { text-align: center; color: var(--hint-color); margin-top: 50px; font-size: 16px; }
 
         .day-group { margin-bottom: 24px; }
-        .day-header {
-            font-size: 15px; font-weight: 600; color: var(--hint-color);
-            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
-            position: sticky; top: 60px; background: var(--bg-color); padding: 5px 0; z-index: 5;
-        }
+        .day-header { font-size: 15px; font-weight: 600; color: var(--hint-color); margin-bottom: 10px; text-transform: uppercase; position: sticky; top: 60px; background: var(--bg-color); padding: 5px 0; z-index: 5; }
 
-        .event-card {
-            background-color: var(--card-bg); border-radius: 16px;
-            padding: 16px; margin-bottom: 12px; display: flex;
-            justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
+        .event-card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: opacity 0.2s; }
+        .event-card:active { opacity: 0.7; }
+        .event-content { flex-grow: 1; cursor: pointer; } /* Кликабельная зона для редактирования */
+        
         .event-title { font-size: 17px; font-weight: 600; display: block; margin-bottom: 4px; }
         .event-time { font-size: 14px; color: var(--accent-color); font-weight: 500; }
         .event-comment { font-size: 14px; color: var(--hint-color); margin-top: 6px; display: block; line-height: 1.3;}
         .event-meta { font-size: 12px; color: var(--hint-color); margin-top: 6px; display: block; opacity: 0.7;}
         
-        .delete-btn {
-            background: rgba(255, 59, 48, 0.1); color: var(--danger-color);
-            border: none; width: 32px; height: 32px; border-radius: 10px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px;
-        }
+        .delete-btn { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; margin-left: 10px; }
 
-        /* Модалка */
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99;
-        }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 99; }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        .modal {
-            position: fixed; bottom: -100%; left: 0; width: 100%; height: 90vh;
-            background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px;
-            transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto;
-        }
+        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; height: 90vh; background: var(--bg-color); border-radius: 24px 24px 0 0; padding: 24px 20px; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); overflow-y: auto; }
         .modal.active { bottom: 0; }
 
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h2 { margin: 0; font-size: 20px; }
         .close-btn { background: none; border: none; color: var(--accent-color); font-size: 16px; font-weight: 500; padding: 0;}
 
-        /* Инпуты внутри карточек */
         .input-group { background: var(--card-bg); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
-        .input-group input, .input-group textarea {
-            width: 100%; border: none; background: transparent;
-            color: var(--text-color); font-size: 17px; padding: 12px 0; outline: none; font-family: inherit;
-        }
+        .input-group input, .input-group textarea { width: 100%; border: none; background: transparent; color: var(--text-color); font-size: 17px; padding: 12px 0; outline: none; font-family: inherit; }
         .input-group textarea { resize: none; min-height: 60px; }
         .divider { height: 1px; background: var(--bg-color); margin: 0 -16px; }
 
-        /* Тумблер (Switch) в стиле iOS */
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 17px;}
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -112,17 +76,10 @@
         .chips-title { font-size: 14px; font-weight: 500; color: var(--hint-color); margin-bottom: 6px;}
         .chips-subtitle { font-size: 12px; color: var(--hint-color); margin-bottom: 12px; opacity: 0.7;}
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
-        .chip {
-            background: var(--card-bg); color: var(--text-color);
-            padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
-            border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; cursor: pointer;
-        }
+        .chip { background: var(--card-bg); color: var(--text-color); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; border: 1px solid rgba(0,0,0,0.05); transition: 0.2s; cursor: pointer; }
         .chip.active { background: var(--accent-color); color: var(--accent-text); border-color: var(--accent-color); }
 
-        .save-btn {
-            width: 100%; background: var(--accent-color); color: var(--accent-text);
-            border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px;
-        }
+        .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
         
         .flatpickr-calendar { background: var(--card-bg) !important; border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;}
         .flatpickr-day { color: var(--text-color) !important; }
@@ -142,7 +99,7 @@
     <div class="overlay" id="overlay" onclick="closeModal()"></div>
     <div class="modal" id="modal">
         <div class="modal-header">
-            <h2>Новое дело</h2>
+            <h2 id="modal-title">Новое дело</h2>
             <button class="close-btn" onclick="closeModal()">Отмена</button>
         </div>
 
@@ -153,7 +110,7 @@
         </div>
 
         <div class="input-group">
-            <input type="text" id="dates-picker" placeholder="Выбери даты (можно несколько)">
+            <input type="text" id="dates-picker" placeholder="Выбери даты">
             <div class="divider"></div>
             
             <div class="row-item">
@@ -182,7 +139,7 @@
             <div class="chip" data-val="5">5 мин</div>
         </div>
 
-        <button class="save-btn" onclick="saveEvent()">Сохранить в график</button>
+        <button class="save-btn" id="save-btn" onclick="saveEvent()">Сохранить в график</button>
     </div>
 
     <script>
@@ -194,16 +151,12 @@
         const userId = tg.initDataUnsafe?.user?.id || '123456789';
         let selectedPrefs = [];
         let datePickerInstance;
+        let allEventsCache = []; // Кэш для редактирования
+        let editingEventId = null; // ID редактируемого события (если null - значит создание)
 
-        // Логика тумблера "Весь день"
         document.getElementById('all-day-toggle').addEventListener('change', function(e) {
             tg.HapticFeedback.selectionChanged();
-            const timeWrapper = document.getElementById('time-wrapper');
-            if (e.target.checked) {
-                timeWrapper.classList.add('hidden');
-            } else {
-                timeWrapper.classList.remove('hidden');
-            }
+            document.getElementById('time-wrapper').classList.toggle('hidden', e.target.checked);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -228,8 +181,55 @@
             });
         });
 
-        function openModal() {
+        // Открытие модалки (если передан id, то это редактирование)
+        function openModal(id = null) {
             tg.HapticFeedback.impactOccurred('medium');
+            editingEventId = id;
+            
+            const titleEl = document.getElementById('modal-title');
+            const datesPickerEl = document.getElementById('dates-picker');
+            const saveBtnEl = document.getElementById('save-btn');
+
+            if (id !== null) {
+                // Режим редактирования
+                const ev = allEventsCache.find(e => e.id === id);
+                titleEl.textContent = 'Редактировать';
+                saveBtnEl.textContent = 'Сохранить изменения';
+                
+                document.getElementById('title').value = ev.title;
+                document.getElementById('comment').value = ev.comment || '';
+                
+                const d = new Date(ev.event_date);
+                // Формат YYYY-MM-DD для календаря
+                const dateString = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+                
+                // Переключаем календарь в одиночный режим
+                datePickerInstance.set('mode', 'single');
+                datePickerInstance.setDate(dateString);
+                
+                document.getElementById('all-day-toggle').checked = ev.is_all_day;
+                document.getElementById('time-wrapper').classList.toggle('hidden', ev.is_all_day);
+                
+                if (!ev.is_all_day) {
+                    const timeString = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+                    document.getElementById('time-picker').value = timeString;
+                }
+
+                // Восстанавливаем выбранные напоминания
+                selectedPrefs = ev.notify_prefs || [];
+                document.querySelectorAll('.chip').forEach(chip => {
+                    const val = parseInt(chip.dataset.val);
+                    if (selectedPrefs.includes(val)) chip.classList.add('active');
+                    else chip.classList.remove('active');
+                });
+
+            } else {
+                // Режим создания нового
+                titleEl.textContent = 'Новое дело';
+                saveBtnEl.textContent = 'Сохранить в график';
+                datePickerInstance.set('mode', 'multiple');
+            }
+
             document.getElementById('overlay').classList.add('active');
             document.getElementById('modal').classList.add('active');
         }
@@ -245,9 +245,9 @@
             datePickerInstance.clear();
             selectedPrefs = [];
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            editingEventId = null;
         }
 
-        // Защита от HTML инъекций в комментарии
         function escapeHtml(text) {
             if (!text) return '';
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -259,26 +259,24 @@
         function getRelativeDayName(dateObj) {
             const today = new Date();
             const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            
             if (dateObj.toDateString() === today.toDateString()) return "Сегодня";
             if (dateObj.toDateString() === tomorrow.toDateString()) return "Завтра";
-            
             return `${dateObj.getDate()} ${months[dateObj.getMonth()]}, ${days[dateObj.getDay()]}`;
         }
 
         async function loadEvents() {
             try {
                 const res = await fetch(`/api/events?userId=${userId}`);
-                const events = await res.json();
+                allEventsCache = await res.json(); // Сохраняем в кэш для редактирования
                 const list = document.getElementById('events-list');
                 
-                if (events.length === 0) {
+                if (allEventsCache.length === 0) {
                     list.innerHTML = `<div class="empty-state">График пуст.<br>Нажми + чтобы добавить дела или смены.</div>`;
                     return;
                 }
 
                 const groupedEvents = {};
-                events.forEach(ev => {
+                allEventsCache.forEach(ev => {
                     const dateObj = new Date(ev.event_date);
                     const dateKey = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).toISOString();
                     if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
@@ -291,7 +289,6 @@
                     let groupHTML = `<div class="day-group"><div class="day-header">${getRelativeDayName(groupDate)}</div>`;
                         
                     groupedEvents[dateKey].forEach(ev => {
-                        // Логика времени (весь день или точное время)
                         const timeString = ev.is_all_day ? 'Весь день' : new Date(ev.event_date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                         const commentHtml = ev.comment ? `<span class="event-comment">${escapeHtml(ev.comment)}</span>` : '';
                         const prefsText = (ev.notify_prefs && ev.notify_prefs.length > 0) 
@@ -300,7 +297,7 @@
 
                         groupHTML += `
                             <div class="event-card">
-                                <div style="flex-grow: 1;">
+                                <div class="event-content" onclick="openModal(${ev.id})">
                                     <span class="event-title">${ev.title}</span>
                                     <span class="event-time">${timeString}</span>
                                     ${commentHtml}
@@ -327,28 +324,40 @@
 
             if (!title || selectedDates.length === 0 || (!isAllDay && !timeVal)) {
                 tg.HapticFeedback.notificationOccurred('error');
-                return tg.showAlert('Укажи название и выбери даты!');
+                return tg.showAlert('Укажи название и дату!');
             }
 
-            const btn = document.querySelector('.save-btn');
+            const btn = document.getElementById('save-btn');
             btn.textContent = 'Сохранение...';
 
             const [hours, minutes] = isAllDay ? [0, 0] : timeVal.split(':');
             
-            const finalDates = selectedDates.map(d => {
-                const newDate = new Date(d);
+            if (editingEventId !== null) {
+                // РЕДАКТИРОВАНИЕ ОДНОГО ДЕЛА
+                const newDate = new Date(selectedDates[0]);
                 newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                return newDate.toISOString();
-            });
 
-            await fetch('/api/events', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, title, dates: finalDates, notifyPrefs: selectedPrefs, comment, isAllDay })
-            });
+                await fetch(`/api/events/${editingEventId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, date: newDate.toISOString(), notifyPrefs: selectedPrefs, comment, isAllDay })
+                });
+            } else {
+                // СОЗДАНИЕ НОВЫХ ДЕЛ
+                const finalDates = selectedDates.map(d => {
+                    const newDate = new Date(d);
+                    newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                    return newDate.toISOString();
+                });
+
+                await fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, title, dates: finalDates, notifyPrefs: selectedPrefs, comment, isAllDay })
+                });
+            }
 
             tg.HapticFeedback.notificationOccurred('success');
-            btn.textContent = 'Сохранить в график';
             closeModal();
             loadEvents();
         }
