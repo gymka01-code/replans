@@ -20,13 +20,13 @@ async function initDB() {
                 notify_prefs JSONB NOT NULL,
                 sent_notifications JSONB DEFAULT '[]',
                 comment TEXT,
-                is_all_day BOOLEAN DEFAULT FALSE
+                is_all_day BOOLEAN DEFAULT FALSE,
+                color VARCHAR(20) DEFAULT 'blue',
+                is_completed BOOLEAN DEFAULT FALSE
             );
         `);
-        // Обновляем таблицу для новых фич, если колонок еще нет
-        await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS color VARCHAR(20) DEFAULT 'blue';`);
-        await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;`);
-        
+        // Добавляем колонку для подзадач
+        await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS subtasks JSONB DEFAULT '[]';`);
         console.log("База данных проверена и готова");
     } catch (e) { console.error("Ошибка БД:", e); }
 }
@@ -38,70 +38,9 @@ app.use(express.json());
 app.use(express.static('public'));
 
 bot.start((ctx) => {
-    ctx.reply('Привет! Твой личный ежедневник готов 📅\n\nМожешь нажать на кнопку ниже или просто написать мне текст, например:\n— "Завтра в 15:00 тренировка"\n— "Послезавтра работа"\n— "25.12 в 10:00 созвон"', {
-        reply_markup: {
-            inline_keyboard: [[ { text: 'Открыть ежедневник', web_app: { url: process.env.WEBAPP_URL } } ]]
-        }
+    ctx.reply('Привет! Твой личный ежедневник готов 📅', {
+        reply_markup: { inline_keyboard: [[ { text: 'Открыть ежедневник', web_app: { url: process.env.WEBAPP_URL } } ]] }
     });
-});
-
-// Умное добавление дел через текст в боте
-bot.on('text', async (ctx) => {
-    const text = ctx.message.text.toLowerCase();
-    let targetDate = new Date();
-    let isAllDay = true;
-    let hours = 0, minutes = 0;
-
-    // Ищем время (например "в 15:00")
-    const timeMatch = text.match(/в\s+(\d{1,2}):(\d{2})/);
-    if (timeMatch) {
-        isAllDay = false;
-        hours = parseInt(timeMatch[1]);
-        minutes = parseInt(timeMatch[2]);
-    }
-
-    // Ищем дату
-    if (text.includes('завтра')) {
-        targetDate.setDate(targetDate.getDate() + 1);
-    } else if (text.includes('послезавтра')) {
-        targetDate.setDate(targetDate.getDate() + 2);
-    } else {
-        const dateMatch = text.match(/(\d{1,2})[\.\/ -](\d{1,2})/);
-        if (dateMatch) {
-            targetDate.setMonth(parseInt(dateMatch[2]) - 1);
-            targetDate.setDate(parseInt(dateMatch[1]));
-        }
-    }
-    targetDate.setHours(hours, minutes, 0, 0);
-
-    // Убираем дату и время из текста, чтобы получить название
-    let title = ctx.message.text
-        .replace(/сегодня|завтра|послезавтра/gi, '')
-        .replace(/в\s+\d{1,2}:\d{2}/gi, '')
-        .replace(/\d{1,2}[\.\/ -]\d{1,2}/gi, '')
-        .trim();
-    
-    if (!title) title = "Новое дело";
-    // Сделаем первую букву заглавной
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-
-    // Определяем цвет по ключевым словам
-    let color = 'blue';
-    if (title.toLowerCase().includes('работ') || title.toLowerCase().includes('смен')) color = 'red';
-    if (title.toLowerCase().includes('тренировк')) color = 'green';
-    if (title.toLowerCase().includes('отдых')) color = 'purple';
-
-    try {
-        await pool.query(
-            'INSERT INTO events (user_id, title, event_date, notify_prefs, is_all_day, color) VALUES ($1, $2, $3, $4, $5, $6)', 
-            [ctx.from.id, title, targetDate, '[]', isAllDay, color]
-        );
-        const timeStr = isAllDay ? '(весь день)' : targetDate.toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
-        ctx.reply(`✅ Добавлено в график:\n📌 ${title}\n📅 ${targetDate.toLocaleDateString('ru-RU')} ${timeStr}`);
-    } catch (e) {
-        ctx.reply('❌ Ошибка при добавлении в базу.');
-        console.error(e);
-    }
 });
 bot.launch();
 
@@ -112,21 +51,21 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.post('/api/events', async (req, res) => {
-    const { userId, title, dates, notifyPrefs, comment, isAllDay, color } = req.body;
+    const { userId, title, dates, notifyPrefs, comment, isAllDay, color, subtasks } = req.body;
     for (const d of dates) {
         await pool.query(
-            'INSERT INTO events (user_id, title, event_date, notify_prefs, comment, is_all_day, color) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [userId, title, new Date(d), JSON.stringify(notifyPrefs), comment || null, isAllDay || false, color || 'blue']
+            'INSERT INTO events (user_id, title, event_date, notify_prefs, comment, is_all_day, color, subtasks) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [userId, title, new Date(d), JSON.stringify(notifyPrefs), comment || null, isAllDay || false, color || 'blue', JSON.stringify(subtasks || [])]
         );
     }
     res.json({ success: true });
 });
 
 app.put('/api/events/:id', async (req, res) => {
-    const { title, date, notifyPrefs, comment, isAllDay, color } = req.body;
+    const { title, date, notifyPrefs, comment, isAllDay, color, subtasks } = req.body;
     await pool.query(
-        `UPDATE events SET title=$1, event_date=$2, notify_prefs=$3, comment=$4, is_all_day=$5, color=$6, sent_notifications='[]' WHERE id=$7`,
-        [title, new Date(date), JSON.stringify(notifyPrefs), comment || null, isAllDay || false, color || 'blue', req.params.id]
+        `UPDATE events SET title=$1, event_date=$2, notify_prefs=$3, comment=$4, is_all_day=$5, color=$6, subtasks=$7, sent_notifications='[]' WHERE id=$8`,
+        [title, new Date(date), JSON.stringify(notifyPrefs), comment || null, isAllDay || false, color || 'blue', JSON.stringify(subtasks || []), req.params.id]
     );
     res.json({ success: true });
 });
@@ -142,14 +81,76 @@ app.post('/api/events/bulk-delete', async (req, res) => {
     res.json({ success: true });
 });
 
-// НОВОЕ: Переключение статуса "Выполнено"
 app.patch('/api/events/:id/toggle', async (req, res) => {
     const { isCompleted } = req.body;
     await pool.query('UPDATE events SET is_completed = $1 WHERE id = $2', [isCompleted, req.params.id]);
     res.json({ success: true });
 });
 
-// Крон для уведомлений (игнорирует выполненные дела)
+app.patch('/api/events/:id/subtasks', async (req, res) => {
+    const { subtasks } = req.body;
+    await pool.query('UPDATE events SET subtasks = $1 WHERE id = $2', [JSON.stringify(subtasks), req.params.id]);
+    res.json({ success: true });
+});
+
+// НОВОЕ: Экспорт в Apple Calendar (.ics)
+app.get('/api/calendar/:userId.ics', async (req, res) => {
+    const { rows } = await pool.query('SELECT * FROM events WHERE user_id = $1', [req.params.userId]);
+    
+    let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//TelegramPlanner//RU\nCALSCALE:GREGORIAN\n';
+    
+    rows.forEach(ev => {
+        const d = new Date(ev.event_date);
+        ics += 'BEGIN:VEVENT\n';
+        ics += `UID:event-${ev.id}@tgplanner\n`;
+        ics += `SUMMARY:${ev.title}\n`;
+        if (ev.comment) ics += `DESCRIPTION:${ev.comment}\n`;
+        
+        if (ev.is_all_day) {
+            const dateStr = d.toISOString().replace(/[-:]/g, '').split('T')[0];
+            ics += `DTSTART;VALUE=DATE:${dateStr}\n`;
+        } else {
+            const dtStr = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            ics += `DTSTART:${dtStr}\n`;
+            d.setHours(d.getHours() + 1); // По умолчанию длительность 1 час
+            const dtEndStr = d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            ics += `DTEND:${dtEndStr}\n`;
+        }
+        ics += 'END:VEVENT\n';
+    });
+    ics += 'END:VCALENDAR';
+    
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="Planner_${req.params.userId}.ics"`);
+    res.send(ics);
+});
+
+// Крон: Утренняя сводка (каждый день в 08:00 утра)
+cron.schedule('0 8 * * *', async () => {
+    try {
+        const { rows: events } = await pool.query(`SELECT * FROM events WHERE DATE(event_date) = CURRENT_DATE AND is_completed = FALSE`);
+        
+        // Группируем дела по пользователям
+        const userEvents = {};
+        events.forEach(ev => {
+            if (!userEvents[ev.user_id]) userEvents[ev.user_id] = [];
+            userEvents[ev.user_id].push(ev);
+        });
+
+        for (const [userId, evs] of Object.entries(userEvents)) {
+            let msg = `☀️ **Доброе утро!**\nПлан на сегодня (${evs.length} дел):\n\n`;
+            evs.sort((a,b) => new Date(a.event_date) - new Date(b.event_date)).forEach(ev => {
+                const timeStr = ev.is_all_day ? 'Весь день' : new Date(ev.event_date).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'});
+                const colorEmoji = {'blue':'🔵', 'red':'🔴', 'green':'🟢', 'orange':'🟠', 'purple':'🟣'}[ev.color] || '🔵';
+                msg += `${colorEmoji} **${ev.title}** (${timeStr})\n`;
+            });
+            msg += `\nПродуктивного дня! 🚀`;
+            await bot.telegram.sendMessage(userId, msg, { parse_mode: 'Markdown' }).catch(()=>{});
+        }
+    } catch (e) { console.error('Ошибка утренней сводки:', e); }
+});
+
+// Крон: Обычные напоминания
 cron.schedule('* * * * *', async () => {
     const now = new Date();
     try {
