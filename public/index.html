@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
     <style>
-        /* Идеальные цвета Apple iOS */
+        /* Цвета Apple iOS */
         :root {
             --ios-bg: #F2F2F7;
             --ios-card: #FFFFFF;
@@ -34,7 +34,7 @@
             body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Helvetica, Arial, sans-serif; } 
         }
         
-        /* ЗАПРЕТ ВЫДЕЛЕНИЯ ТЕКСТА (Кроме полей ввода) */
+        /* Запрет выделения текста синим цветом */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         input, textarea { -webkit-user-select: auto; user-select: auto; }
         
@@ -76,11 +76,11 @@
         .day-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px; padding-left: 4px;}
         .empty-state { text-align: center; color: var(--ios-hint); margin-top: 50px; font-size: 17px; font-weight: 500; }
 
-        /* Чистая Карточка iOS (Без свайпа и красного фона) */
+        /* Карточка iOS */
         .event-card { 
             position: relative; background: var(--ios-card); border-radius: 12px; padding: 14px 16px; 
             display: flex; flex-direction: column; z-index: 2; margin-bottom: 12px;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; 
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s, background 0.3s; 
             width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
         }
         .color-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-radius: 12px 0 0 12px;}
@@ -98,7 +98,7 @@
         .event-time.all-day { color: var(--blue); background: rgba(0, 122, 255, 0.1); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600;}
         .event-comment { font-size: 15px; color: var(--ios-hint); margin-top: 4px; display: block; line-height: 1.3;}
         
-        /* Идеальное угасание при выполнении */
+        /* Состояние: Выполнено (Красивое угасание) */
         .event-card.is-completed { opacity: 0.5; box-shadow: none; }
         .event-card.is-completed .event-title { text-decoration: line-through; color: var(--ios-hint); }
         .event-card.is-completed .color-strip { opacity: 0; }
@@ -113,7 +113,6 @@
         body.select-mode .select-circle { left: 16px; opacity: 1; }
         body.select-mode .event-card-inner { transform: translateX(40px); pointer-events: none;}
         
-        /* Только закрашиваем кружок (без изменения фона карточки) */
         .event-card.selected .select-circle { background: var(--blue); border-color: var(--blue); }
         .event-card.selected .select-circle::after { content: ''; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px;}
 
@@ -134,61 +133,66 @@
         .toolbar-btn.danger.active { opacity: 1; pointer-events: auto; }
         .toolbar-title { font-size: 15px; font-weight: 600; color: var(--ios-text); }
 
-        /* Скрываем кнопки шапки в режиме редактирования */
         body.select-mode .header-actions { opacity: 0; pointer-events: none; }
         body.select-mode .filter-select { opacity: 0.5; pointer-events: none; }
 
-        /* Haptic Touch (Меню Apple) */
-        .haptic-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); opacity: 0; visibility: hidden; transition: opacity 0.3s ease; z-index: 999; }
-        .haptic-overlay.active { opacity: 1; visibility: visible; }
-        .event-card.haptic-active { z-index: 1000 !important; transform: scale(1.05) !important; box-shadow: 0 30px 60px rgba(0,0,0,0.2) !important; transition: 0.3s cubic-bezier(0.32, 0.72, 0, 1) !important; }
+        /* НАСТОЯЩИЙ HAPTIC TOUCH (iOS Cloning Method) */
+        #haptic-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; visibility: hidden;
+        }
+        #haptic-container.active { visibility: visible; pointer-events: auto; }
+        
+        .haptic-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #haptic-container.active .haptic-overlay { opacity: 1; }
+
+        /* Клон карточки, который вылезает поверх размытия */
+        .haptic-card-clone {
+            position: absolute; margin: 0 !important;
+            transform-origin: center; transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: none; /* Чтобы не нажималось */
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2) !important;
+        }
         
         .ios-context-menu { 
             position: absolute; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); 
-            border-radius: 14px; width: 250px; z-index: 1000; opacity: 0; transform: scale(0.8); transition: 0.25s cubic-bezier(0.32, 0.72, 0, 1); pointer-events: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border-radius: 14px; width: 250px; opacity: 0; transform: scale(0.8); transition: 0.25s cubic-bezier(0.32, 0.72, 0, 1); pointer-events: none; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
         }
         @media (prefers-color-scheme: dark) { .ios-context-menu { background: rgba(30, 30, 30, 0.75); } }
+        
         .ios-context-menu.active { opacity: 1; transform: scale(1); pointer-events: auto; }
         .ios-menu-item { padding: 14px 16px; font-size: 17px; color: var(--ios-text); border-bottom: 0.5px solid var(--ios-sep); display: flex; justify-content: space-between; font-weight: 400; cursor: pointer; align-items: center;}
         .ios-menu-item:last-child { border-bottom: none; color: var(--red); }
         .ios-menu-item:active { background: rgba(0,0,0,0.1); }
 
-        /* Модальные окна Apple */
-        .modal { 
-            position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; 
-            background: var(--ios-bg); border-radius: 20px 20px 0 0; padding: 25px 16px 30px; 
-            transition: bottom 0.4s cubic-bezier(0.32, 0.72, 0, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; 
-        }
+        /* Модальные окна */
+        .modal { position: fixed; bottom: -100%; left: 0; width: 100%; max-height: 90vh; background: var(--ios-bg); border-radius: 20px 20px 0 0; padding: 25px 16px 30px; transition: bottom 0.4s cubic-bezier(0.32, 0.72, 0, 1); z-index: 100; box-shadow: 0 -4px 30px rgba(0,0,0,0.1); overflow-y: auto; }
         .modal.active { bottom: 0; }
         .modal::before { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: var(--ios-hint); border-radius: 5px; opacity: 0.4; }
-        
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px;}
         .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;}
         .close-btn { background: var(--ios-sep); border: none; color: var(--blue); font-size: 16px; font-weight: 600; padding: 6px 12px; border-radius: 16px; cursor: pointer;}
-
-        /* Формы и инпуты iOS */
         .input-group { background: var(--ios-card); border-radius: 12px; padding: 4px 16px; margin-bottom: 20px;}
         .input-group input, .input-group textarea { width: 100%; border: none; background: transparent; color: var(--ios-text); font-size: 17px; padding: 14px 0; outline: none; font-family: inherit; }
         .input-group textarea { resize: none; min-height: 80px; }
         .divider { height: 0.5px; background: var(--ios-sep); margin: 0 -16px; }
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; font-size: 17px;}
         .time-input { background: var(--ios-sep); color: var(--ios-text); border: none; padding: 8px 12px; border-radius: 8px; font-size: 17px; font-weight: 500;}
-        
         .color-picker { display: flex; justify-content: space-between; padding: 14px 0; }
         .color-circle { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s;}
         .color-circle.active { border-color: var(--ios-text); transform: scale(1.1);}
-
         .switch { position: relative; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--ios-sep); border-radius: 31px; transition: .3s; }
         .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(20px); }
-
         .save-btn { width: 100%; background: var(--blue); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s;}
         .save-btn:active { opacity: 0.8; transform: scale(0.98); }
-
-        /* Сетка Календаря */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-top: 10px; padding: 0 10px;}
         .cal-header { font-size: 13px; color: var(--ios-hint); font-weight: 600; margin-bottom: 8px;}
         .cal-day { padding: 10px 0 16px 0; border-radius: 10px; font-size: 17px; font-weight: 400; position: relative; cursor: pointer; background: var(--ios-card); display: flex; flex-direction: column; align-items: center;}
@@ -196,15 +200,12 @@
         .cal-day.today { color: white; font-weight: 600; background: var(--blue); }
         .cal-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 3px; position: absolute; bottom: 6px; left: 2px; right: 2px; max-width: 100%; }
         .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
-
-        /* Статистика */
         .stat-item { display: flex; justify-content: space-between; padding: 16px; background: var(--ios-card); border-radius: 12px; margin-bottom: 12px; font-size: 17px; font-weight: 500;}
         .stat-val { font-weight: 600; color: var(--ios-hint); }
     </style>
 </head>
 <body>
 
-    <!-- Главная 3D Обертка -->
     <div id="app-wrap">
         <div class="header-container" id="header">
             <div class="header">
@@ -223,23 +224,25 @@
         <div class="slider-container" id="slider-container"></div>
         <div id="app-dimmer" onclick="closeAllModals()"></div>
 
-        <!-- IOS Нижняя панель действий (Bulk Action) -->
+        <!-- IOS Панель Множественного Выбора -->
         <div id="bulk-action-bar" class="bulk-action-bar">
             <button class="toolbar-btn" onclick="toggleSelectMode(false)">Отменить</button>
             <span class="toolbar-title" id="bulk-count">Выберите дела</span>
             <button class="toolbar-btn danger" id="bulk-delete-btn" onclick="deleteSelected()">Удалить</button>
         </div>
-    </div> <!-- Конец app-wrap -->
-
-    <!-- Haptic Touch Меню -->
-    <div class="haptic-overlay" id="haptic-overlay" onclick="closeHapticMenu()"></div>
-    <div class="ios-context-menu" id="ios-menu">
-        <div class="ios-menu-item" onclick="enterSelectModeFromMenu()">Выбрать несколько <span>☑️</span></div>
-        <div class="ios-menu-item" onclick="moveTomorrow()">На завтра <span>➡️</span></div>
-        <div class="ios-menu-item" onclick="deleteFromMenu()">Удалить <span>🗑</span></div>
     </div>
 
-    <!-- Модалка Календаря -->
+    <!-- Haptic Touch Контейнер (Apple Clone Method) -->
+    <div id="haptic-container">
+        <div class="haptic-overlay" onclick="closeHapticMenu()"></div>
+        <!-- Клон карточки появится здесь скриптом -->
+        <div class="ios-context-menu" id="ios-menu">
+            <div class="ios-menu-item" onclick="enterSelectModeFromMenu()">Выбрать несколько <span>☑️</span></div>
+            <div class="ios-menu-item" onclick="moveTomorrow()">На завтра <span>➡️</span></div>
+            <div class="ios-menu-item" onclick="deleteFromMenu()">Удалить <span>🗑</span></div>
+        </div>
+    </div>
+
     <div class="modal" id="calendar-modal">
         <div class="modal-header">
             <h2 id="month-title">Календарь</h2>
@@ -248,7 +251,6 @@
         <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
-    <!-- Модалка Статистики -->
     <div class="modal" id="stats-modal">
         <div class="modal-header">
             <h2 id="stats-title">Статистика</h2>
@@ -257,13 +259,11 @@
         <div id="stats-content"></div>
     </div>
 
-    <!-- Модалка Создания -->
     <div class="modal" id="modal">
         <div class="modal-header">
             <h2 id="modal-title">Новое дело</h2>
             <button class="close-btn" onclick="closeAllModals()">Отмена</button>
         </div>
-
         <div class="input-group">
             <input type="text" id="title" placeholder="Название (например, Учеба)" autocomplete="off">
             <div class="divider"></div>
@@ -277,7 +277,6 @@
             <div class="divider"></div>
             <textarea id="comment" placeholder="Примечание..."></textarea>
         </div>
-        
         <div class="input-group">
             <input type="text" id="dates-picker" placeholder="Выбрать дату">
             <div class="divider"></div>
@@ -296,7 +295,6 @@
                 </div>
             </div>
         </div>
-        
         <button class="save-btn" id="save-btn" onclick="saveEvent()">Добавить</button>
     </div>
 
@@ -311,7 +309,6 @@
         let editingEventId = null;
         let currentFilter = 'ALL';
         
-        // Переменные для Select Mode
         let isSelectMode = false;
         let selectedIds = new Set();
 
@@ -355,11 +352,7 @@
             select.innerHTML = optionsHtml; select.value = currentFilter;
         }
 
-        function onFilterChange() { 
-            currentFilter = document.getElementById('event-filter').value; 
-            if(isSelectMode) toggleSelectMode(false); 
-            renderEvents(); 
-        }
+        function onFilterChange() { currentFilter = document.getElementById('event-filter').value; if(isSelectMode) toggleSelectMode(false); renderEvents(); }
 
         function formatDayTitle(dateString) {
             const [y, m, d] = dateString.split('-');
@@ -441,32 +434,26 @@
             await fetch(`/api/events/${id}/toggle`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isCompleted: status }) });
         }
 
-        /* МАГИЯ APPLE (Только долгое нажатие, свайп удален) */
+        /* МАГИЯ APPLE HAPTIC TOUCH (МЕТОД КЛОНИРОВАНИЯ) */
         let touchStartX = 0, touchStartY = 0;
         let hapticTimer = null;
         let hapticTargetId = null;
 
         window.handleTouchStartLogic = function(e, id) {
             if (isSelectMode) return; 
-            
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
 
             hapticTimer = setTimeout(() => {
                 activateHapticMenu(id);
-            }, 400); // Долгое нажатие (400мс)
+            }, 400); 
         };
 
         window.handleTouchMoveLogic = function(e) {
             if (hapticTargetId || isSelectMode) return;
-            
             let diffX = Math.abs(e.touches[0].clientX - touchStartX);
             let diffY = Math.abs(e.touches[0].clientY - touchStartY);
-
-            // Если палец сдвинулся больше чем на 10px - отменяем открытие меню
-            if (diffX > 10 || diffY > 10) {
-                clearTimeout(hapticTimer);
-            }
+            if (diffX > 10 || diffY > 10) clearTimeout(hapticTimer);
         };
 
         window.handleTouchEndLogic = function(e) {
@@ -474,10 +461,78 @@
             clearTimeout(hapticTimer);
         };
 
-        /* Клик по карточке */
-        window.handleCardClick = function(e, id) {
-            if (hapticTargetId) return; // Если открыто меню
+        /* Меню Haptic Touch */
+        function activateHapticMenu(id) {
+            tg.HapticFeedback.impactOccurred('heavy');
+            hapticTargetId = id;
             
+            const originalCard = document.getElementById(`card-${id}`);
+            const rect = originalCard.getBoundingClientRect();
+            
+            // 1. Прячем оригинал
+            originalCard.style.opacity = '0';
+            
+            // 2. Создаем клон для 3D эффекта
+            const clone = originalCard.cloneNode(true);
+            clone.id = 'haptic-clone';
+            clone.className = originalCard.className + ' haptic-card-clone';
+            clone.style.top = `${rect.top}px`;
+            clone.style.left = `${rect.left}px`;
+            clone.style.width = `${rect.width}px`;
+            clone.style.height = `${rect.height}px`;
+            clone.style.opacity = '1';
+            clone.style.transform = 'scale(1)'; // начальное состояние
+            
+            const container = document.getElementById('haptic-container');
+            const oldClone = document.getElementById('haptic-clone');
+            if (oldClone) oldClone.remove();
+            
+            // Вставляем клон в DOM перед меню
+            container.insertBefore(clone, document.getElementById('ios-menu'));
+            
+            // 3. Вычисляем позицию меню
+            const menu = document.getElementById('ios-menu');
+            const scaledOffset = (rect.height * 1.05 - rect.height) / 2; // смещение из-за увеличения
+            let topPos = rect.bottom + scaledOffset + 12;
+            
+            if(topPos + 170 > window.innerHeight) {
+                topPos = rect.top - scaledOffset - 170; // если снизу нет места, кидаем меню наверх
+            }
+            
+            menu.style.top = `${topPos}px`;
+            menu.style.left = `${Math.max(16, rect.left)}px`;
+            
+            container.classList.add('active');
+            
+            // 4. Запускаем анимацию увеличения клона
+            setTimeout(() => {
+                clone.style.transform = 'scale(1.05)';
+                menu.classList.add('active');
+            }, 10);
+        }
+
+        window.closeHapticMenu = function() {
+            const container = document.getElementById('haptic-container');
+            const menu = document.getElementById('ios-menu');
+            const clone = document.getElementById('haptic-clone');
+            
+            container.classList.remove('active');
+            menu.classList.remove('active');
+            
+            if (clone) clone.style.transform = 'scale(1)'; // Сдуваем клон обратно
+            
+            setTimeout(() => {
+                if (hapticTargetId) {
+                    const originalCard = document.getElementById(`card-${hapticTargetId}`);
+                    if (originalCard) originalCard.style.opacity = '1'; // Возвращаем оригинал
+                    hapticTargetId = null;
+                }
+                if (clone) clone.remove();
+            }, 250); // Ждем окончания CSS анимации
+        };
+
+        window.handleCardClick = function(e, id) {
+            if (hapticTargetId) return; 
             if (isSelectMode) {
                 tg.HapticFeedback.selectionChanged();
                 if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
@@ -488,7 +543,7 @@
             openModal(id);
         };
 
-        /* ЛОГИКА SELECT MODE (Режим редактирования Apple) */
+        /* ЛОГИКА SELECT MODE (Режим Редактирования) */
         function toggleSelectMode(force) {
             isSelectMode = force !== undefined ? force : !isSelectMode;
             document.body.classList.toggle('select-mode', isSelectMode);
@@ -517,7 +572,6 @@
         async function deleteSelected() {
             if (selectedIds.size === 0) return;
             tg.HapticFeedback.impactOccurred('heavy');
-            
             tg.showConfirm(`Удалить выбранные дела (${selectedIds.size})?`, async (yes) => {
                 if (yes) {
                     await fetch('/api/events/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: Array.from(selectedIds) }) });
@@ -529,77 +583,53 @@
         }
 
         window.enterSelectModeFromMenu = function() {
-            toggleSelectMode(true);
-            selectedIds.add(hapticTargetId);
-            updateBulkActionBar();
+            const id = hapticTargetId;
             closeHapticMenu();
-            renderEvents();
-        };
-
-        /* Меню Haptic Touch */
-        function activateHapticMenu(id) {
-            tg.HapticFeedback.impactOccurred('heavy');
-            hapticTargetId = id;
-            
-            const card = document.getElementById(`card-${id}`);
-            const rect = card.getBoundingClientRect();
-            
-            document.getElementById('haptic-overlay').classList.add('active');
-            card.classList.add('haptic-active');
-            
-            const menu = document.getElementById('ios-menu');
-            let topPos = rect.bottom + 12;
-            if(topPos + 160 > window.innerHeight) topPos = rect.top - 170; 
-            
-            menu.style.top = `${topPos}px`;
-            menu.style.left = `${Math.max(16, rect.left)}px`;
-            menu.classList.add('active');
-        }
-
-        window.closeHapticMenu = function() {
-            document.getElementById('haptic-overlay').classList.remove('active');
-            document.getElementById('ios-menu').classList.remove('active');
-            if (hapticTargetId) {
-                document.getElementById(`card-${hapticTargetId}`).classList.remove('haptic-active');
-                hapticTargetId = null;
-            }
+            // Ждем пока меню закроется, затем включаем режим выбора
+            setTimeout(() => {
+                toggleSelectMode(true);
+                selectedIds.add(id);
+                updateBulkActionBar();
+                renderEvents();
+            }, 250);
         };
 
         window.deleteFromMenu = async function() { 
             const id = hapticTargetId;
             closeHapticMenu();
-            tg.HapticFeedback.impactOccurred('heavy');
-            await fetch(`/api/events/${id}`, { method: 'DELETE' });
-            loadEvents();
+            setTimeout(async () => {
+                tg.HapticFeedback.impactOccurred('heavy');
+                await fetch(`/api/events/${id}`, { method: 'DELETE' });
+                loadEvents();
+            }, 250);
         };
         
         window.moveTomorrow = async function() {
-            if(!hapticTargetId) return;
-            tg.HapticFeedback.notificationOccurred('success');
-            const ev = allEventsCache.find(e => e.id === hapticTargetId);
+            const id = hapticTargetId;
             closeHapticMenu();
-            let newDate = new Date(ev.event_date); newDate.setDate(newDate.getDate() + 1);
-            let newEndDate = ev.end_date ? new Date(ev.end_date) : null; if(newEndDate) newEndDate.setDate(newEndDate.getDate() + 1);
-            const payload = { title: ev.title, date: newDate.toISOString(), endDate: newEndDate ? newEndDate.toISOString() : null, notifyPrefs: ev.notify_prefs || [], comment: ev.comment, isAllDay: ev.is_all_day, color: ev.color, subtasks: ev.subtasks };
-            await fetch(`/api/events/${ev.id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            loadEvents();
+            setTimeout(async () => {
+                tg.HapticFeedback.notificationOccurred('success');
+                const ev = allEventsCache.find(e => e.id === id);
+                let newDate = new Date(ev.event_date); newDate.setDate(newDate.getDate() + 1);
+                let newEndDate = ev.end_date ? new Date(ev.end_date) : null; if(newEndDate) newEndDate.setDate(newEndDate.getDate() + 1);
+                const payload = { title: ev.title, date: newDate.toISOString(), endDate: newEndDate ? newEndDate.toISOString() : null, notifyPrefs: ev.notify_prefs || [], comment: ev.comment, isAllDay: ev.is_all_day, color: ev.color, subtasks: ev.subtasks };
+                await fetch(`/api/events/${ev.id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                loadEvents();
+            }, 250);
         };
 
-        /* Apple Modal Logic */
+        /* Модальные окна */
         function closeAllModals() {
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
             document.body.classList.remove('modal-open');
-            
             datePickerInstance.clear();
-            document.getElementById('title').value = ''; 
-            document.getElementById('comment').value = '';
+            document.getElementById('title').value = ''; document.getElementById('comment').value = '';
             editingEventId = null;
         }
 
         function openModal(id = null) {
             tg.HapticFeedback.impactOccurred('medium');
             document.body.classList.add('modal-open');
-            
             editingEventId = id;
             if (id !== null) {
                 const ev = allEventsCache.find(e => e.id === id);
@@ -656,7 +686,6 @@
             closeAllModals(); loadEvents();
         }
 
-        /* Генерация Календаря Apple Style */
         function openCalendarModal() { 
             tg.HapticFeedback.impactOccurred('light'); 
             const grid = document.getElementById('calendar-grid');
@@ -675,16 +704,14 @@
                 const cellDate = new Date(year, month, d);
                 const localDateStr = getLocalDateString(cellDate);
                 const isToday = (localDateStr === getLocalDateString(now)) ? 'today' : '';
-                
                 const dayEvents = allEventsCache.filter(e => getLocalDateString(new Date(e.event_date)) === localDateStr);
+                
                 let dotsHtml = '<div class="cal-dots">';
                 dayEvents.slice(0, 4).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
                 dotsHtml += '</div>';
-
                 html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${localDateStr}')">${d}${dotsHtml}</div>`;
             }
             grid.innerHTML = html;
-            
             document.body.classList.add('modal-open');
             document.getElementById('calendar-modal').classList.add('active'); 
         }
@@ -696,25 +723,20 @@
             else tg.showAlert('На эту дату нет дел.');
         }
 
-        /* Генерация Статистики Apple Style */
         function openStatsModal() { 
             tg.HapticFeedback.impactOccurred('light'); 
-            
             const now = new Date();
             const currentMonthEvents = allEventsCache.filter(e => new Date(e.event_date).getMonth() === now.getMonth());
-            
             const stats = {};
             currentMonthEvents.forEach(e => { stats[e.title] = (stats[e.title] || 0) + 1; });
-
+            
             let html = `<p style="color:var(--ios-hint); margin-top:0;">Сводка за этот месяц:</p>`;
             if (Object.keys(stats).length === 0) html += `<div class="empty-state">Нет данных</div>`;
             
             Object.entries(stats).sort((a,b) => b[1]-a[1]).forEach(([title, count]) => {
                 html += `<div class="stat-item"><span>${escapeHtml(title)}</span> <span class="stat-val">${count}</span></div>`;
             });
-            
             document.getElementById('stats-content').innerHTML = html;
-
             document.body.classList.add('modal-open');
             document.getElementById('stats-modal').classList.add('active'); 
         }
