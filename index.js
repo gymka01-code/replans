@@ -10,7 +10,6 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Автоматическое создание и обновление таблицы (без потери старых данных)
 async function initDB() {
     try {
         await pool.query(`
@@ -20,13 +19,12 @@ async function initDB() {
                 title TEXT NOT NULL,
                 event_date TIMESTAMP NOT NULL,
                 notify_prefs JSONB NOT NULL,
-                sent_notifications JSONB DEFAULT '[]'
+                sent_notifications JSONB DEFAULT '[]',
+                comment TEXT,
+                is_all_day BOOLEAN DEFAULT FALSE
             );
         `);
-        // Добавляем новые колонки, если их еще нет
-        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS comment TEXT;');
-        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS is_all_day BOOLEAN DEFAULT FALSE;');
-        console.log("База данных проверена и обновлена");
+        console.log("База данных проверена и готова");
     } catch (e) {
         console.error("Ошибка БД:", e);
     }
@@ -37,7 +35,6 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
 app.use(express.json());
 
-// --- БОТ ---
 bot.start((ctx) => {
     ctx.reply('Привет! Твой личный ежедневник готов 📅', {
         reply_markup: {
@@ -49,15 +46,16 @@ bot.start((ctx) => {
 });
 bot.launch();
 
-// --- АПИ ДЛЯ МИНИ АППА ---
 app.use(express.static('public'));
 
+// Получить все дела
 app.get('/api/events', async (req, res) => {
     const userId = req.query.userId;
     const { rows } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
     res.json(rows);
 });
 
+// Создать новые дела (одно или несколько дат)
 app.post('/api/events', async (req, res) => {
     const { userId, title, dates, notifyPrefs, comment, isAllDay } = req.body;
     
@@ -70,12 +68,25 @@ app.post('/api/events', async (req, res) => {
     res.json({ success: true });
 });
 
+// НОВОЕ: Обновить существующее дело
+app.put('/api/events/:id', async (req, res) => {
+    const { title, date, notifyPrefs, comment, isAllDay } = req.body;
+    await pool.query(
+        `UPDATE events 
+         SET title = $1, event_date = $2, notify_prefs = $3, comment = $4, is_all_day = $5, sent_notifications = '[]' 
+         WHERE id = $6`,
+        [title, new Date(date), JSON.stringify(notifyPrefs), comment || null, isAllDay || false, req.params.id]
+    );
+    res.json({ success: true });
+});
+
+// Удалить дело
 app.delete('/api/events/:id', async (req, res) => {
     await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
     res.json({ success: true });
 });
 
-// --- СИСТЕМА УВЕДОМЛЕНИЙ ---
+// Крон для уведомлений
 cron.schedule('* * * * *', async () => {
     const now = new Date();
     try {
