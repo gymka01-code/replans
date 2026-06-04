@@ -1,4 +1,3 @@
-require('dotenv').config(); // Для локального запуска (на Railway не нужно)
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const cron = require('node-cron');
