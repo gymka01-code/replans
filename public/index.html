@@ -18,7 +18,6 @@
             --accent-text: var(--tg-theme-button-text-color, #FFFFFF);
             --hint-color: var(--tg-theme-hint-color, #8E8E93);
             
-            /* Apple System Colors */
             --blue: #007AFF; --red: #FF3B30; --green: #34C759; --orange: #FF9500; --purple: #AF52DE; --gray: #8E8E93;
         }
 
@@ -95,7 +94,7 @@
         .modal-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
         .close-btn { background: rgba(118, 118, 128, 0.12); border: none; color: var(--text-color); font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 12px; }
 
-        /* Presets (Templates) */
+        /* Presets */
         .presets-scroll { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
         .presets-scroll::-webkit-scrollbar { display: none; }
         .preset-chip { padding: 8px 14px; background: var(--card-bg); border-radius: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; cursor: pointer;}
@@ -125,14 +124,14 @@
         .chip.active { background: var(--accent-color); color: var(--accent-text); }
         .save-btn { width: 100%; background: var(--accent-color); color: var(--accent-text); border: none; padding: 16px; border-radius: 16px; font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
 
-        /* Month Calendar Modal */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-top: 10px;}
-        .cal-header { font-size: 13px; color: var(--hint-color); font-weight: 600; margin-bottom: 8px;}
-        .cal-day { padding: 10px 0; border-radius: 12px; font-size: 16px; font-weight: 500; position: relative; cursor: pointer; background: var(--card-bg);}
+        /* Month Calendar Modal - FIXED AND IMPROVED */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-top: 10px;}
+        .cal-header { font-size: 13px; color: var(--hint-color); font-weight: 600; margin-bottom: 4px;}
+        .cal-day { padding: 6px 0 16px 0; border-radius: 12px; font-size: 16px; font-weight: 500; position: relative; cursor: pointer; background: var(--card-bg); display: flex; flex-direction: column; align-items: center;}
         .cal-day.empty { background: transparent; }
         .cal-day.today { color: var(--accent-color); font-weight: 700; background: rgba(0, 122, 255, 0.1); }
-        .cal-dots { display: flex; justify-content: center; gap: 2px; position: absolute; bottom: 4px; left: 0; width: 100%; }
-        .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+        .cal-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; position: absolute; bottom: 4px; left: 2px; right: 2px; max-width: 100%; }
+        .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
 
         /* Stats List */
         .stat-item { display: flex; justify-content: space-between; padding: 14px 16px; background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; font-size: 16px; font-weight: 500;}
@@ -196,7 +195,6 @@
             <button class="close-btn" onclick="closeAllModals()">Отмена</button>
         </div>
         
-        <!-- Presets -->
         <div class="presets-scroll" id="presets">
             <div class="preset-chip" onclick="applyPreset('Работа', 'red', true)"><div class="dot" style="background: var(--red)"></div> Работа</div>
             <div class="preset-chip" onclick="applyPreset('Тренировка', 'green', false)"><div class="dot" style="background: var(--green)"></div> Тренировка</div>
@@ -207,7 +205,6 @@
         <div class="input-group">
             <input type="text" id="title" placeholder="Название (например, Учеба)" autocomplete="off">
             <div class="divider"></div>
-            <!-- Color Picker -->
             <div class="color-picker" id="color-picker">
                 <div class="color-circle active" data-color="blue" style="background: var(--blue)" onclick="selectColor('blue')"></div>
                 <div class="color-circle" data-color="red" style="background: var(--red)" onclick="selectColor('red')"></div>
@@ -261,6 +258,13 @@
         let selectedIds = new Set();
         let pressTimer, isLongPress = false;
         let startX = 0, startY = 0;
+
+        // Вспомогательная функция, чтобы железно получать "YYYY-MM-DD" в местном часовом поясе
+        function getLocalDateString(date) {
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(date.getDate()).padStart(2, '0');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             datePickerInstance = flatpickr("#dates-picker", { mode: "multiple", dateFormat: "Y-m-d", locale: "ru", disableMobile: "true" });
@@ -323,12 +327,20 @@
         }
 
         function formatDayTitle(dateString) {
-            const d = new Date(dateString);
+            // dateString приходит в виде "YYYY-MM-DD"
+            const [y, m, d] = dateString.split('-');
+            const targetDate = new Date(y, m - 1, d);
+            
             const today = new Date();
             const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-            if (d.toDateString() === today.toDateString()) return `Сегодня, ${d.getDate()} ${months[d.getMonth()]}`;
-            if (d.toDateString() === tomorrow.toDateString()) return `Завтра, ${d.getDate()} ${months[d.getMonth()]}`;
-            return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+            
+            const tdStr = getLocalDateString(today);
+            const tmStr = getLocalDateString(tomorrow);
+            
+            if (dateString === tdStr) return `Сегодня, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
+            if (dateString === tmStr) return `Завтра, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
+            
+            return `${days[targetDate.getDay()]}, ${targetDate.getDate()} ${months[targetDate.getMonth()]}`;
         }
 
         function renderEvents() {
@@ -343,16 +355,15 @@
             const groupedEvents = {};
             filteredEvents.forEach(ev => {
                 const d = new Date(ev.event_date);
-                const dateKey = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+                const dateKey = getLocalDateString(d); // Надежная местная дата
                 if (!groupedEvents[dateKey]) groupedEvents[dateKey] = [];
                 groupedEvents[dateKey].push(ev);
             });
 
             slider.innerHTML = '';
-            Object.keys(groupedEvents).sort().forEach((dateKey, index) => {
-                let pageHTML = `<div class="day-page" id="page-${dateKey.split('T')[0]}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
+            Object.keys(groupedEvents).sort().forEach((dateKey) => {
+                let pageHTML = `<div class="day-page" id="page-${dateKey}"><div class="day-title">${formatDayTitle(dateKey)}</div>`;
                 
-                // Сортировка: Сначала активные (весь день -> по времени), затем выполненные
                 groupedEvents[dateKey].sort((a, b) => {
                     if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
                     if (a.is_all_day && !b.is_all_day) return -1;
@@ -390,16 +401,12 @@
             });
         }
 
-        // Завершение дела
         async function toggleComplete(e, id, status) {
-            e.stopPropagation(); // Отменяем клик по самой карточке
+            e.stopPropagation(); 
             tg.HapticFeedback.impactOccurred('medium');
-            
-            // Оптимистичное UI обновление
             const ev = allEventsCache.find(x => x.id === id);
             if(ev) ev.is_completed = status;
             renderEvents();
-
             await fetch(`/api/events/${id}/toggle`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -407,7 +414,6 @@
             });
         }
 
-        // Выделение и удаление
         window.handleTouchStart = function(e, id) {
             if (isSelectMode) return;
             if (e.touches) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
@@ -458,7 +464,6 @@
             });
         }
 
-        // Управление модалками
         function closeAllModals() {
             document.getElementById('overlay').classList.remove('active');
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
@@ -483,7 +488,7 @@
                 
                 const d = new Date(ev.event_date);
                 datePickerInstance.set('mode', 'single');
-                datePickerInstance.setDate(d.toISOString().split('T')[0]);
+                datePickerInstance.setDate(getLocalDateString(d));
                 document.getElementById('all-day-toggle').checked = ev.is_all_day;
                 toggleTime();
                 if (!ev.is_all_day) document.getElementById('time-picker').value = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
@@ -525,15 +530,15 @@
             closeAllModals(); loadEvents();
         }
 
-        // МЕСЯЧНЫЙ КАЛЕНДАРЬ
+        // ОБНОВЛЕННЫЙ КАЛЕНДАРЬ
         function openCalendarModal() {
             tg.HapticFeedback.impactOccurred('light');
             const grid = document.getElementById('calendar-grid');
             const now = new Date();
             const year = now.getFullYear(), month = now.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDay = new Date(year, month, 1).getDay(); // 0=Вс
-            const shift = firstDay === 0 ? 6 : firstDay - 1; // Сдвиг для Пн
+            const firstDay = new Date(year, month, 1).getDay();
+            const shift = firstDay === 0 ? 6 : firstDay - 1; 
             
             document.getElementById('month-title').textContent = `${["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"][month]} ${year}`;
             
@@ -541,16 +546,21 @@
             for(let i=0; i<shift; i++) html += `<div class="cal-day empty"></div>`;
             
             for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = new Date(year, month, d).toISOString().split('T')[0];
-                const isToday = (d === now.getDate()) ? 'today' : '';
+                const cellDate = new Date(year, month, d);
+                const localDateStr = getLocalDateString(cellDate); // Жесткая привязка к местной дате
+                const isToday = (localDateStr === getLocalDateString(now)) ? 'today' : '';
                 
-                // Ищем события на этот день
-                const dayEvents = allEventsCache.filter(e => e.event_date.startsWith(dateStr));
+                // Фильтруем события именно по местной дате
+                const dayEvents = allEventsCache.filter(e => getLocalDateString(new Date(e.event_date)) === localDateStr);
+                
                 let dotsHtml = '<div class="cal-dots">';
-                dayEvents.slice(0, 3).forEach(e => { dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; });
+                // Без жестких ограничений, flex-wrap распределит точки
+                dayEvents.slice(0, 10).forEach(e => { 
+                    dotsHtml += `<div class="cal-dot" style="background: var(--${e.color || 'blue'})"></div>`; 
+                });
                 dotsHtml += '</div>';
 
-                html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${dateStr}')">${d}${dotsHtml}</div>`;
+                html += `<div class="cal-day ${isToday}" onclick="scrollToDate('${localDateStr}')">${d}${dotsHtml}</div>`;
             }
             grid.innerHTML = html;
             
@@ -569,16 +579,13 @@
             }
         }
 
-        // СТАТИСТИКА
         function openStatsModal() {
             tg.HapticFeedback.impactOccurred('light');
             const now = new Date();
             const currentMonthEvents = allEventsCache.filter(e => new Date(e.event_date).getMonth() === now.getMonth());
             
             const stats = {};
-            currentMonthEvents.forEach(e => {
-                stats[e.title] = (stats[e.title] || 0) + 1;
-            });
+            currentMonthEvents.forEach(e => { stats[e.title] = (stats[e.title] || 0) + 1; });
 
             let html = `<p style="color:var(--hint-color); margin-top:0;">В этом месяце запланировано:</p>`;
             if (Object.keys(stats).length === 0) html += `<div class="empty-state">Нет данных</div>`;
