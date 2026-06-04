@@ -1,16 +1,15 @@
+require('dotenv').config(); // Оставь, если нужно для локалки. На Railway не мешает.
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const cron = require('node-cron');
 const { Pool } = require('pg');
 const path = require('path');
 
-// Подключение к БД PostgreSQL (Railway сам даст DATABASE_URL)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } // Обязательно для Railway
+    ssl: { rejectUnauthorized: false }
 });
 
-// Создаем таблицу, если ее нет
 pool.query(`
     CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
@@ -39,26 +38,28 @@ bot.start((ctx) => {
 bot.launch();
 
 // --- АПИ ДЛЯ МИНИ АППА ---
-app.use(express.static('public')); // Отдаем интерфейс
+app.use(express.static('public'));
 
-// Получить дела
 app.get('/api/events', async (req, res) => {
     const userId = req.query.userId;
     const { rows } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
     res.json(rows);
 });
 
-// Создать дело
+// НОВОЕ: Принимаем массив дат (dates) вместо одной date
 app.post('/api/events', async (req, res) => {
-    const { userId, title, date, notifyPrefs } = req.body;
-    await pool.query(
-        'INSERT INTO events (user_id, title, event_date, notify_prefs) VALUES ($1, $2, $3, $4)',
-        [userId, title, new Date(date), JSON.stringify(notifyPrefs)]
-    );
+    const { userId, title, dates, notifyPrefs } = req.body;
+    
+    // Перебираем все даты и сохраняем каждую как отдельное событие
+    for (const d of dates) {
+        await pool.query(
+            'INSERT INTO events (user_id, title, event_date, notify_prefs) VALUES ($1, $2, $3, $4)',
+            [userId, title, new Date(d), JSON.stringify(notifyPrefs)]
+        );
+    }
     res.json({ success: true });
 });
 
-// Удалить дело (тебе это точно понадобится)
 app.delete('/api/events/:id', async (req, res) => {
     await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
     res.json({ success: true });
@@ -68,7 +69,6 @@ app.delete('/api/events/:id', async (req, res) => {
 cron.schedule('* * * * *', async () => {
     const now = new Date();
     try {
-        // Берем будущие события
         const { rows: events } = await pool.query('SELECT * FROM events WHERE event_date > NOW()');
 
         for (const event of events) {
@@ -77,15 +77,12 @@ cron.schedule('* * * * *', async () => {
             const sent = event.sent_notifications || [];
 
             for (const pref of prefs) {
-                // Если пришло время и мы еще не отправляли
                 if (diffMinutes <= pref && diffMinutes > pref - 2 && !sent.includes(pref)) {
                     const timeText = pref >= 60 ? (pref/60) + ' ч.' : pref + ' мин.';
                     await bot.telegram.sendMessage(
                         event.user_id, 
                         `🔔 Напоминание!\nСобытие: **${event.title}**\nНачнется через ${timeText}`
                     );
-                    
-                    // Записываем, что отправили
                     sent.push(pref);
                     await pool.query('UPDATE events SET sent_notifications = $1 WHERE id = $2', [JSON.stringify(sent), event.id]);
                 }
