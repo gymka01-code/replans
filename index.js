@@ -51,6 +51,7 @@ const escapeHtmlBot = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;'
 bot.on('inline_query', async (ctx) => {
     try {
         const userId = ctx.from.id;
+        const searchQuery = ctx.inlineQuery.query.toLowerCase().trim(); // Текст, который юзер пишет после @имени_бота
         
         // Получаем все дела пользователя
         const { rows: events } = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date ASC', [userId]);
@@ -59,24 +60,28 @@ bot.on('inline_query', async (ctx) => {
             return ctx.answerInlineQuery([{
                 type: 'article', id: 'empty', title: 'Нет планов', description: 'Ваш график пуст',
                 input_message_content: { message_text: 'Я абсолютно свободен! Никаких планов нет. 😎' }
-            }], { cache_time: 0 });
+            }], { cache_time: 0, is_personal: true });
         }
 
-        // Вычисляем сегодняшнюю и завтрашнюю даты с учетом часового пояса сервера
+        // Вычисляем сегодняшнюю и завтрашнюю даты
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Переводим в формат YYYY-MM-DD
         const getIsoDate = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         const todayStr = getIsoDate(today);
         const tomorrowStr = getIsoDate(tomorrow);
 
-        // Фильтруем дела
-        const todayEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === todayStr);
-        const tomorrowEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === tomorrowStr);
+        // Фильтруем дела по дате
+        let todayEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === todayStr);
+        let tomorrowEvents = events.filter(e => getIsoDate(new Date(e.event_date)) === tomorrowStr);
 
-        // Формируем красивое сообщение
+        // Если юзер что-то написал, фильтруем по названию
+        if (searchQuery) {
+            todayEvents = todayEvents.filter(e => e.title.toLowerCase().includes(searchQuery));
+            tomorrowEvents = tomorrowEvents.filter(e => e.title.toLowerCase().includes(searchQuery));
+        }
+
         const formatEvents = (evs, title) => {
             if (evs.length === 0) return `На ${title.toLowerCase()} у меня нет планов! 🏖`;
             let txt = `📅 <b>Мой план на ${title.toLowerCase()}:</b>\n\n`;
@@ -91,23 +96,40 @@ bot.on('inline_query', async (ctx) => {
             return txt;
         };
 
-        const results = [
-            {
+        const results = [];
+
+        // Добавляем результаты только если там что-то есть, либо если мы ничего не искали
+        if (todayEvents.length > 0 || !searchQuery) {
+            results.push({
                 type: 'article', id: 'today',
                 title: 'План на сегодня',
                 description: `Дел: ${todayEvents.length}`,
                 input_message_content: { message_text: formatEvents(todayEvents, 'Сегодня'), parse_mode: 'HTML' }
-            },
-            {
+            });
+        }
+
+        if (tomorrowEvents.length > 0 || !searchQuery) {
+            results.push({
                 type: 'article', id: 'tomorrow',
                 title: 'План на завтра',
                 description: `Дел: ${tomorrowEvents.length}`,
                 input_message_content: { message_text: formatEvents(tomorrowEvents, 'Завтра'), parse_mode: 'HTML' }
-            }
-        ];
+            });
+        }
 
-        // Отправляем результат (cache_time: 0 гарантирует, что данные всегда свежие)
-        return ctx.answerInlineQuery(results, { cache_time: 0 });
+        // Если искали, но ничего не нашли
+        if (results.length === 0) {
+            results.push({
+                type: 'article', id: 'not_found',
+                title: 'Ничего не найдено',
+                description: 'По вашему запросу нет совпадений',
+                input_message_content: { message_text: `По запросу "<b>${escapeHtmlBot(searchQuery)}</b>" ничего не найдено 🤷‍♂️`, parse_mode: 'HTML' }
+            });
+        }
+
+        // is_personal: true — гарантия того, что Telegram не покажет ваши дела другим людям из глобального кэша
+        return ctx.answerInlineQuery(results, { cache_time: 0, is_personal: true });
+        
     } catch (e) { 
         console.error('Ошибка инлайн-режима:', e); 
     }
