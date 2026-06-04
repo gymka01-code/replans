@@ -1,4 +1,4 @@
-require('dotenv').config(); // Оставь, если нужно для локалки. На Railway не мешает.
+require('dotenv').config();
 const express = require('express');
 const { Telegraf } = require('telegraf');
 const cron = require('node-cron');
@@ -10,16 +10,28 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-pool.query(`
-    CREATE TABLE IF NOT EXISTS events (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        title TEXT NOT NULL,
-        event_date TIMESTAMP NOT NULL,
-        notify_prefs JSONB NOT NULL,
-        sent_notifications JSONB DEFAULT '[]'
-    )
-`).then(() => console.log("Таблица проверена/создана")).catch(console.error);
+// Автоматическое создание и обновление таблицы (без потери старых данных)
+async function initDB() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS events (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                title TEXT NOT NULL,
+                event_date TIMESTAMP NOT NULL,
+                notify_prefs JSONB NOT NULL,
+                sent_notifications JSONB DEFAULT '[]'
+            );
+        `);
+        // Добавляем новые колонки, если их еще нет
+        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS comment TEXT;');
+        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS is_all_day BOOLEAN DEFAULT FALSE;');
+        console.log("База данных проверена и обновлена");
+    } catch (e) {
+        console.error("Ошибка БД:", e);
+    }
+}
+initDB();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
@@ -46,15 +58,13 @@ app.get('/api/events', async (req, res) => {
     res.json(rows);
 });
 
-// НОВОЕ: Принимаем массив дат (dates) вместо одной date
 app.post('/api/events', async (req, res) => {
-    const { userId, title, dates, notifyPrefs } = req.body;
+    const { userId, title, dates, notifyPrefs, comment, isAllDay } = req.body;
     
-    // Перебираем все даты и сохраняем каждую как отдельное событие
     for (const d of dates) {
         await pool.query(
-            'INSERT INTO events (user_id, title, event_date, notify_prefs) VALUES ($1, $2, $3, $4)',
-            [userId, title, new Date(d), JSON.stringify(notifyPrefs)]
+            'INSERT INTO events (user_id, title, event_date, notify_prefs, comment, is_all_day) VALUES ($1, $2, $3, $4, $5, $6)',
+            [userId, title, new Date(d), JSON.stringify(notifyPrefs), comment || null, isAllDay || false]
         );
     }
     res.json({ success: true });
@@ -79,9 +89,10 @@ cron.schedule('* * * * *', async () => {
             for (const pref of prefs) {
                 if (diffMinutes <= pref && diffMinutes > pref - 2 && !sent.includes(pref)) {
                     const timeText = pref >= 60 ? (pref/60) + ' ч.' : pref + ' мин.';
+                    const commentText = event.comment ? `\n📝 Примечание: ${event.comment}` : '';
                     await bot.telegram.sendMessage(
                         event.user_id, 
-                        `🔔 Напоминание!\nСобытие: **${event.title}**\nНачнется через ${timeText}`
+                        `🔔 Напоминание!\nСобытие: **${event.title}**${commentText}\nНачнется через ${timeText}`
                     );
                     sent.push(pref);
                     await pool.query('UPDATE events SET sent_notifications = $1 WHERE id = $2', [JSON.stringify(sent), event.id]);
